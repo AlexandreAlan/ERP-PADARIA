@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply antialiased font-sans;
+  }
+
+  /* Scrollbar personalizada */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-gray-900; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-600 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-500; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 active:bg-brand-700
+           text-white font-semibold px-4 py-2 rounded-lg
+           transition-colors duration-150 focus:outline-none
+           focus:ring-2 focus:ring-brand-400 focus:ring-offset-2
+           focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold
+           px-4 py-2 rounded-lg transition-colors duration-150
+           focus:outline-none focus:ring-2 focus:ring-gray-500
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-semibold
+           px-4 py-2 rounded-lg transition-colors duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white font-semibold
+           px-4 py-2 rounded-lg transition-colors duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .card {
+    @apply bg-gray-800 border border-gray-700 rounded-xl p-4;
+  }
+
+  .input {
+    @apply bg-gray-700 border border-gray-600 text-gray-100
+           rounded-lg px-3 py-2 w-full focus:outline-none
+           focus:ring-2 focus:ring-brand-500 focus:border-transparent
+           placeholder-gray-400 text-sm;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-300 mb-1;
+  }
+
+  .badge-a { @apply bg-green-900 text-green-300 text-xs font-bold px-2 py-0.5 rounded; }
+  .badge-b { @apply bg-yellow-900 text-yellow-300 text-xs font-bold px-2 py-0.5 rounded; }
+  .badge-c { @apply bg-gray-700 text-gray-300 text-xs font-bold px-2 py-0.5 rounded; }
+}

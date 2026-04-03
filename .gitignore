@@ -1,0 +1,50 @@
+# Ambiente virtual Python
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Variáveis de ambiente (NUNCA versionar!)
+.env
+!.env.example
+
+# Banco de dados
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.vite/
+
+# IDEs e ferramentas de desenvolvimento
+.vscode/
+.idea/
+*.swp
+*.swo
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+uploads/
+
+# Docker volumes
+database/data/
+
+# Pytest / coverage
+.pytest_cache/
+htmlcov/
+.coverage

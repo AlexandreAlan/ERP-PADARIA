@@ -1,0 +1,16 @@
+from app.routers import (
+    auth,
+    usuarios,
+    categorias,
+    fornecedores,
+    produtos,
+    estoque,
+    caixa,
+    vendas,
+    compras,
+    dashboard,
+    relatorios,
+    auditoria,
+    configuracoes,
+    whatsapp,
+)

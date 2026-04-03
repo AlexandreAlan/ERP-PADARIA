@@ -1,0 +1,37 @@
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# Database
+sqlalchemy==2.0.36
+aiomysql==0.2.0
+aiosqlite==0.20.0
+alembic==1.14.0
+
+# Auth / Security
+python-jose[cryptography]==3.3.0
+bcrypt==4.2.1
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.18
+
+# Settings
+pydantic-settings==2.6.1
+pydantic[email]==2.10.3
+
+# HTTP client (PIX integration, webhooks)
+httpx==0.28.1
+
+# Reports
+reportlab==4.2.5
+openpyxl==3.1.5
+Jinja2==3.1.4
+
+# Thermal printer ESC/POS
+python-escpos==3.1
+
+# Date/time
+python-dateutil==2.9.0
+
+# Utilities
+python-slugify==8.0.4
+pillow==11.0.0
