@@ -303,13 +303,14 @@ Set-Location $INSTALL_DIR
 # ============================================================================
 Write-Step "Criando script de inicializacao..."
 $startBat   = Join-Path $INSTALL_DIR "Iniciar_Padaria.bat"
-$uvicornExe = Join-Path $venvDir "Scripts\uvicorn.exe"
+$venvPython2 = Join-Path $venvDir "Scripts\python.exe"
 $batLines = @(
     "@echo off",
     "title ERP Padaria",
     "color 0A",
     ("cd /d """ + $backendDir + """"),
     ("set PYTHONPATH=" + $backendDir),
+    ("if not exist """ + (Join-Path $backendDir "uploads") + """ mkdir """ + (Join-Path $backendDir "uploads") + """"),
     "echo.",
     "echo  ============================================",
     "echo       ERP PADARIA - Iniciando...",
@@ -318,8 +319,8 @@ $batLines = @(
     "echo  Acesse: http://localhost:8000",
     "echo  Para encerrar: feche esta janela.",
     "echo.",
-    "start /b powershell -WindowStyle Hidden -Command ""Start-Sleep 6; Start-Process 'http://localhost:8000'""",
-    ("""" + $uvicornExe + """ app.main:app --host 0.0.0.0 --port 8000 --workers 1"),
+    "start /b powershell -WindowStyle Hidden -Command ""Start-Sleep 12; Start-Process 'http://localhost:8000'""",
+    ("""" + $venvPython2 + """ -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1"),
     "echo.",
     "echo  [!] Servidor encerrado ou falhou. Verifique o erro acima.",
     "pause"

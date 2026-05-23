@@ -25,6 +25,9 @@ from app.routers import (
 
 settings = get_settings()
 
+# Garante que o diretório de uploads existe ANTES de qualquer mount
+os.makedirs(settings.upload_dir, exist_ok=True)
+
 # Pasta do frontend compilado (relativa ao backend/)
 _FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
 _FRONTEND_DIST = os.path.normpath(_FRONTEND_DIST)
@@ -33,7 +36,6 @@ _SERVE_FRONTEND = os.path.isdir(_FRONTEND_DIST)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    os.makedirs(settings.upload_dir, exist_ok=True)
     yield
 
 
