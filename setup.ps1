@@ -5,6 +5,9 @@
 Set-StrictMode -Off
 $ErrorActionPreference = "Stop"
 
+# Forca TLS 1.2 para downloads em maquinas antigas
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 $INSTALL_DIR = "C:\Padaria"
 $REPO_URL    = "https://github.com/AlexandreAlan/ERP-PADARIA.git"
 $TMP         = $env:TEMP
@@ -28,14 +31,17 @@ function Refresh-Path {
 }
 
 function Run-Silent($exe, $argList) {
-    $p = Start-Process -FilePath $exe -ArgumentList $argList -Wait -PassThru -WindowStyle Hidden
-    return $p.ExitCode
+    try {
+        $p = Start-Process -FilePath $exe -ArgumentList $argList -Wait -PassThru -WindowStyle Hidden -ErrorAction Stop
+        return $p.ExitCode
+    } catch {
+        return 1
+    }
 }
 
 function Download-File($url, $dest) {
     Write-Warn "Baixando: $url"
     try {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $wc = New-Object System.Net.WebClient
         $wc.DownloadFile($url, $dest)
         return $true
@@ -49,8 +55,9 @@ function Try-Winget($id) {
     try {
         $wg = Get-Command winget -ErrorAction SilentlyContinue
         if (-not $wg) { return $false }
-        $ec = (Start-Process winget -ArgumentList "install --id $id --source winget --silent --accept-package-agreements --accept-source-agreements" -Wait -PassThru -WindowStyle Hidden).ExitCode
-        return ($ec -eq 0)
+        # Tenta instalar com timeout implicito (se demorar muito o usuario vera)
+        $process = Start-Process winget -ArgumentList "install --id $id --source winget --silent --accept-package-agreements --accept-source-agreements" -Wait -PassThru -WindowStyle Hidden -ErrorAction SilentlyContinue
+        return ($process.ExitCode -eq 0)
     } catch { return $false }
 }
 
