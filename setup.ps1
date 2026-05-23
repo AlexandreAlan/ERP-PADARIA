@@ -309,6 +309,7 @@ $batLines = @(
     "title ERP Padaria",
     "color 0A",
     ("cd /d """ + $backendDir + """"),
+    ("set PYTHONPATH=" + $backendDir),
     "echo.",
     "echo  ============================================",
     "echo       ERP PADARIA - Iniciando...",
