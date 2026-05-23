@@ -339,8 +339,9 @@ if (-not (Test-Path $iconPath)) { $iconPath = "$env:SystemRoot\system32\imageres
 function New-Shortcut($lnkPath) {
     $ws = New-Object -ComObject WScript.Shell
     $sc = $ws.CreateShortcut($lnkPath)
-    $sc.TargetPath       = $startBat
-    $sc.WorkingDirectory = $INSTALL_DIR
+    $sc.TargetPath       = "$env:SystemRoot\System32\cmd.exe"
+    $sc.Arguments        = "/k `"$startBat`""
+    $sc.WorkingDirectory = $backendDir
     $sc.Description      = "Iniciar ERP Padaria"
     $sc.WindowStyle      = 1
     $sc.IconLocation     = $iconPath
