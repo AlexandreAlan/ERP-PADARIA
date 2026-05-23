@@ -326,6 +326,8 @@ $batLines = @(
     "echo  Acesse: http://localhost:8000",
     "echo  Para encerrar: feche esta janela.",
     "echo.",
+    "echo  [!] Verificando se a porta 8000 esta livre...",
+    "for /f ""tokens=5"" %%a in ('netstat -aon ^| findstr :8000 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1",
     "start /b powershell -WindowStyle Hidden -Command ""Start-Sleep 12; Start-Process 'http://localhost:8000'""",
     ("""" + $venvPython2 + """ -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1"),
     "echo.",
