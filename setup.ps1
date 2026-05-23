@@ -41,36 +41,59 @@ Write-Host ""
 Write-Step "Verificando Python..."
 $PYTHON = $null
 foreach ($cmd in @("python","py","python3")) {
-    if (Test-Cmd $cmd) {
+    try {
         $v = (& $cmd --version 2>&1).ToString()
         if ($v -match "3\.(1[0-9]|[2-9]\d)") { $PYTHON = $cmd; break }
-    }
+    } catch { }
 }
 if (-not $PYTHON) {
     Write-Warn "Python 3.10+ nao encontrado. Instalando via winget..."
     winget install --id Python.Python.3.12 --source winget --silent --accept-package-agreements --accept-source-agreements
+    # Recarrega PATH para pegar o Python recem instalado
     $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
-    $PYTHON = "python"
+    # Busca o python.exe diretamente nas pastas comuns de instalacao
+    $pyPaths = @(
+        "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python311\python.exe",
+        "C:\Python312\python.exe",
+        "C:\Python311\python.exe",
+        "$env:ProgramFiles\Python312\python.exe"
+    )
+    foreach ($p in $pyPaths) {
+        if (Test-Path $p) { $PYTHON = $p; break }
+    }
+    if (-not $PYTHON) { $PYTHON = "python" }
 }
-Write-OK ("Python: " + (& $PYTHON --version 2>&1).ToString())
+try {
+    Write-OK ("Python: " + (& $PYTHON --version 2>&1).ToString())
+} catch {
+    Write-Warn "Python instalado mas ainda nao disponivel. Pode ser necessario reiniciar o terminal."
+}
 
 # --- 2. Node.js --------------------------------------------------------------
 Write-Step "Verificando Node.js..."
-if (-not (Test-Cmd "node")) {
+$nodeOk = $false
+try { if ((& node --version 2>&1).ToString() -match "v\d+") { $nodeOk = $true } } catch { }
+if (-not $nodeOk) {
     Write-Warn "Node.js nao encontrado. Instalando via winget..."
     winget install --id OpenJS.NodeJS.LTS --source winget --silent --accept-package-agreements --accept-source-agreements
     $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
 }
-Write-OK ("Node.js: " + (& node --version 2>&1).ToString())
+try { Write-OK ("Node.js: " + (& node --version 2>&1).ToString()) } catch { Write-Warn "Node.js instalado - reinicie o terminal se houver problemas." }
 
 # --- 3. Git ------------------------------------------------------------------
 Write-Step "Verificando Git..."
-if (-not (Test-Cmd "git")) {
+$gitOk = $false
+try { if ((& git --version 2>&1).ToString() -match "git version") { $gitOk = $true } } catch { }
+if (-not $gitOk) {
     Write-Warn "Git nao encontrado. Instalando via winget..."
     winget install --id Git.Git --source winget --silent --accept-package-agreements --accept-source-agreements
     $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+    # Git instala em local especifico no Windows
+    $gitExe = "C:\Program Files\Git\cmd\git.exe"
+    if (Test-Path $gitExe) { $env:PATH = "C:\Program Files\Git\cmd;" + $env:PATH }
 }
-Write-OK ("Git: " + (& git --version 2>&1).ToString())
+try { Write-OK ("Git: " + (& git --version 2>&1).ToString()) } catch { Write-Warn "Git instalado - reinicie o terminal se houver problemas." }
 
 # --- 4. Clona / atualiza repositorio -----------------------------------------
 Write-Step "Preparando $INSTALL_DIR..."
