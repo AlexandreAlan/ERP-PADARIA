@@ -318,7 +318,10 @@ $batLines = @(
     "echo  Para encerrar: feche esta janela.",
     "echo.",
     "start /b powershell -WindowStyle Hidden -Command ""Start-Sleep 6; Start-Process 'http://localhost:8000'""",
-    ("""" + $uvicornExe + """ app.main:app --host 0.0.0.0 --port 8000 --workers 1")
+    ("""" + $uvicornExe + """ app.main:app --host 0.0.0.0 --port 8000 --workers 1"),
+    "echo.",
+    "echo  [!] Servidor encerrado ou falhou. Verifique o erro acima.",
+    "pause"
 )
 [System.IO.File]::WriteAllLines($startBat, $batLines, [System.Text.Encoding]::ASCII)
 Write-OK "Script: $startBat"
