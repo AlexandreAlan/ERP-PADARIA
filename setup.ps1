@@ -3,7 +3,7 @@
 # Execute como Administrador: botao direito -> Executar como administrador
 
 Set-StrictMode -Off
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
 
 $INSTALL_DIR = "C:\Padaria"
 $REPO_URL    = "https://github.com/AlexandreAlan/ERP-PADARIA.git"
@@ -281,7 +281,7 @@ Write-OK "Dependencias Python instaladas"
 # ============================================================================
 Write-Step "Criando banco de dados..."
 Set-Location $backendDir
-& $venvPython seed_dev.py
+cmd.exe /c "$venvPython seed_dev.py"
 Set-Location $INSTALL_DIR
 Write-OK "Banco de dados pronto"
 
@@ -290,11 +290,11 @@ Write-OK "Banco de dados pronto"
 # ============================================================================
 Write-Step "Instalando dependencias do frontend..."
 Set-Location $frontendDir
-npm install --legacy-peer-deps
+cmd.exe /c "npm install --legacy-peer-deps"
 Write-OK "Dependencias frontend instaladas"
 
 Write-Step "Compilando frontend (aguarde 1-2 minutos)..."
-npm run build
+cmd.exe /c "npm run build"
 Write-OK "Frontend compilado"
 Set-Location $INSTALL_DIR
 
@@ -372,4 +372,4 @@ Write-Host "  Para iniciar clique em 'Padaria ERP' na area de trabalho"  -Foregr
 Write-Host ""
 
 $resp = Read-Host "Deseja iniciar o sistema agora? (S/N)"
-if ($resp -match "^[Ss]") { Start-Process $startBat }
+if ($resp -match "^[SsYyJj]") { Start-Process $startBat }
