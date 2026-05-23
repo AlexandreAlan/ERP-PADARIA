@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -44,11 +45,17 @@ async def get_venda(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    result = await db.execute(select(Venda).where(Venda.id == venda_id))
+    result = await db.execute(
+        select(Venda)
+        .options(
+            selectinload(Venda.itens).selectinload(ItemVenda.produto),
+            selectinload(Venda.pagamentos),
+        )
+        .where(Venda.id == venda_id)
+    )
     venda = result.scalar_one_or_none()
     if not venda:
         raise HTTPException(status_code=404, detail="Venda não encontrada")
-    await db.refresh(venda, ["itens", "pagamentos"])
     return _build_venda_read(venda)
 
 
@@ -146,7 +153,8 @@ async def _montar_dados_recibo(venda: Venda, operador_nome: str, db: AsyncSessio
 
     itens = []
     for item in venda.itens:
-        produto = item.produto
+        # item.produto já deve estar carregado via selectinload; fallback para nome do id
+        produto = item.produto if item.produto else None
         itens.append(ItemRecibo(
             nome=produto.nome if produto else f"Produto #{item.produto_id}",
             quantidade=item.quantidade,

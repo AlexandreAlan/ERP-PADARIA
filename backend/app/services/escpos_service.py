@@ -204,8 +204,9 @@ def imprimir(dados: DadosRecibo) -> bool:
     elif tipo == "network":
         return enviar_para_impressora_network(buf)
     elif tipo == "file":
-        # Útil para debug: salva em arquivo
-        with open("/tmp/ultimo_recibo.bin", "wb") as f:
+        import tempfile, os
+        path = os.path.join(tempfile.gettempdir(), "ultimo_recibo.bin")
+        with open(path, "wb") as f:
             f.write(buf)
         return True
     return False

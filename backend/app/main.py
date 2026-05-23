@@ -1,7 +1,9 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.config import get_settings
 from app.routers import (
@@ -23,14 +25,16 @@ from app.routers import (
 
 settings = get_settings()
 
+# Pasta do frontend compilado (relativa ao backend/)
+_FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
+_FRONTEND_DIST = os.path.normpath(_FRONTEND_DIST)
+_SERVE_FRONTEND = os.path.isdir(_FRONTEND_DIST)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    import os
     os.makedirs(settings.upload_dir, exist_ok=True)
     yield
-    # Shutdown (connection pool cleanup is handled by SQLAlchemy)
 
 
 app = FastAPI(
@@ -67,11 +71,21 @@ app.include_router(vendas.router,       prefix=f"{PREFIX}/vendas",       tags=["
 app.include_router(compras.router,      prefix=f"{PREFIX}/compras",      tags=["Compras"])
 app.include_router(dashboard.router,    prefix=f"{PREFIX}/dashboard",    tags=["Dashboard"])
 app.include_router(relatorios.router,   prefix=f"{PREFIX}/relatorios",   tags=["Relatórios"])
-app.include_router(auditoria.router,       prefix=f"{PREFIX}/auditoria",       tags=["Auditoria"])
-app.include_router(configuracoes.router,   prefix=f"{PREFIX}/configuracoes",   tags=["Configurações"])
-app.include_router(whatsapp.router,        prefix=f"{PREFIX}/whatsapp",         tags=["WhatsApp"])
+app.include_router(auditoria.router,    prefix=f"{PREFIX}/auditoria",    tags=["Auditoria"])
+app.include_router(configuracoes.router,prefix=f"{PREFIX}/configuracoes",tags=["Configurações"])
+app.include_router(whatsapp.router,     prefix=f"{PREFIX}/whatsapp",     tags=["WhatsApp"])
 
 
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "app": settings.app_name}
+
+
+# Serve React SPA — must be registered AFTER all API routes
+if _SERVE_FRONTEND:
+    app.mount("/assets", StaticFiles(directory=os.path.join(_FRONTEND_DIST, "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        index = os.path.join(_FRONTEND_DIST, "index.html")
+        return FileResponse(index)

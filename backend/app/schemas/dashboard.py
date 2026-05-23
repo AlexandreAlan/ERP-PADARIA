@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Dict
 from pydantic import BaseModel
 
 
@@ -26,6 +26,7 @@ class AlertaEstoque(BaseModel):
     estoque_atual: Decimal
     estoque_minimo: Decimal
     unidade_medida: str
+    urgente: bool = False
 
 
 class CurvaABCItem(BaseModel):
@@ -43,6 +44,7 @@ class DashboardResponse(BaseModel):
     vendas_por_dia: list[VendaDiaria]
     alertas_estoque: list[AlertaEstoque]
     curva_abc: list[CurvaABCItem]
+    crescimento: Optional[Dict[str, float]] = None
 
 
 class FiltroRelatorio(BaseModel):

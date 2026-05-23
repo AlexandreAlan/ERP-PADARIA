@@ -14,18 +14,23 @@ export default function AuditoriaPage() {
   )
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-white mb-6">Log de Auditoria</h1>
+    <div className="p-6 space-y-5" style={{ background: 'var(--clr-bg)', minHeight: '100vh' }}>
 
-      <div className="flex gap-3 mb-6">
-        <select value={entidade} onChange={e => setEntidade(e.target.value)} className="input w-48">
+      <div>
+        <h1 className="text-xl font-bold" style={{ color: 'var(--clr-text)' }}>Log de Auditoria</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>Registro completo de ações realizadas no sistema</p>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex gap-3 flex-wrap">
+        <select value={entidade} onChange={e => setEntidade(e.target.value)} className="input w-52">
           <option value="">Todas as entidades</option>
           <option value="usuario">Usuário</option>
           <option value="venda">Venda</option>
           <option value="produto">Produto</option>
           <option value="sessao_caixa">Caixa</option>
         </select>
-        <select value={acao} onChange={e => setAcao(e.target.value)} className="input w-40">
+        <select value={acao} onChange={e => setAcao(e.target.value)} className="input w-44">
           <option value="">Todas as ações</option>
           <option value="criar">Criar</option>
           <option value="editar">Editar</option>
@@ -35,53 +40,82 @@ export default function AuditoriaPage() {
         </select>
       </div>
 
-      <div className="card overflow-hidden">
+      {/* Tabela */}
+      <div
+        className="rounded-2xl overflow-hidden overflow-x-auto"
+        style={{ border: '1px solid var(--clr-border)', background: 'var(--clr-surface)' }}
+      >
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-gray-400 text-xs uppercase border-b border-gray-700">
-              <th className="text-left px-4 py-3">Data/Hora</th>
-              <th className="text-left px-4 py-3">Entidade</th>
-              <th className="text-left px-4 py-3">ID</th>
-              <th className="text-left px-4 py-3">Ação</th>
-              <th className="text-left px-4 py-3">Usuário</th>
-              <th className="text-left px-4 py-3">IP</th>
+            <tr style={{ borderBottom: '1px solid var(--clr-border)', background: 'var(--clr-green-pale)' }}>
+              {['Data/Hora', 'Entidade', 'ID', 'Ação', 'Usuário', 'IP'].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {(data || []).map((log: any, i: number) => (
-              <tr key={log.id} className={`border-b border-gray-800 text-sm ${i % 2 ? 'bg-gray-900/30' : ''}`}>
-                <td className="px-4 py-2 font-mono text-gray-400 text-xs">
+              <tr
+                key={log.id}
+                style={{
+                  borderBottom: '1px solid var(--clr-border)',
+                  background: i % 2 === 0 ? 'var(--clr-surface)' : 'var(--clr-bg)',
+                  transition: 'background 0.12s',
+                }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-green-pale)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'var(--clr-surface)' : 'var(--clr-bg)'}
+              >
+                <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--clr-text-muted)' }}>
                   {format(new Date(log.created_at), 'dd/MM/yy HH:mm:ss')}
                 </td>
-                <td className="px-4 py-2 text-gray-300">{log.entidade}</td>
-                <td className="px-4 py-2 font-mono text-gray-500">#{log.entidade_id}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--clr-text)' }}>{log.entidade}</td>
+                <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--clr-text-muted)' }}>#{log.entidade_id}</td>
+                <td className="px-4 py-2.5">
                   <AcaoBadge acao={log.acao} />
                 </td>
-                <td className="px-4 py-2 text-gray-300">{log.usuario_id || 'Sistema'}</td>
-                <td className="px-4 py-2 font-mono text-gray-500 text-xs">{log.ip_address || '—'}</td>
+                <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--clr-text)' }}>{log.usuario_id || 'Sistema'}</td>
+                <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--clr-text-muted)' }}>{log.ip_address || '—'}</td>
               </tr>
             ))}
+            {!isLoading && (data || []).length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-12 text-center text-sm" style={{ color: 'var(--clr-text-muted)' }}>
+                  Nenhum registro encontrado
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
-        {isLoading && <div className="text-center py-4 text-gray-400">Carregando...</div>}
+
+        {isLoading && (
+          <div className="flex items-center justify-center gap-3 py-8" style={{ color: 'var(--clr-text-muted)' }}>
+            <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--clr-border-2)', borderTopColor: 'var(--clr-green)' }} />
+            <span className="text-sm">Carregando...</span>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
 function AcaoBadge({ acao }: { acao: string }) {
-  const map: Record<string, string> = {
-    criar: 'bg-green-900/50 text-green-300',
-    editar: 'bg-blue-900/50 text-blue-300',
-    deletar: 'bg-red-900/50 text-red-300',
-    cancelar: 'bg-orange-900/50 text-orange-300',
-    login: 'bg-gray-700 text-gray-300',
-    logout: 'bg-gray-700 text-gray-400',
-    ajuste: 'bg-yellow-900/50 text-yellow-300',
+  const styles: Record<string, { bg: string; color: string; border: string }> = {
+    criar:    { bg: 'var(--clr-green-lite)', color: 'var(--clr-green)',   border: 'var(--clr-border-2)' },
+    editar:   { bg: '#EFF6FF',              color: '#1D4ED8',             border: '#BFDBFE' },
+    deletar:  { bg: 'var(--clr-danger-bg)', color: 'var(--clr-danger)',   border: '#FCA5A5' },
+    cancelar: { bg: 'var(--clr-warning-bg)',color: 'var(--clr-warning)',  border: '#FDE68A' },
+    login:    { bg: 'var(--clr-green-pale)',color: 'var(--clr-text-muted)', border: 'var(--clr-border)' },
+    logout:   { bg: 'var(--clr-green-pale)',color: 'var(--clr-text-muted)', border: 'var(--clr-border)' },
+    ajuste:   { bg: '#F5F3FF',              color: '#6D28D9',             border: '#DDD6FE' },
   }
+
+  const s = styles[acao] ?? styles.login
+
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full ${map[acao] || 'bg-gray-700 text-gray-300'}`}>
+    <span
+      className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-md"
+      style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+    >
       {acao}
     </span>
   )

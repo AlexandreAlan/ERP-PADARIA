@@ -1,67 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Variáveis de design ─── */
+:root {
+  --clr-bg:         #F7F9F7;
+  --clr-surface:    #FFFFFF;
+  --clr-border:     #D8E4D8;
+  --clr-border-2:   #C5D9C5;
+  --clr-green:      #2D6A4F;
+  --clr-green-med:  #40916C;
+  --clr-green-lite: #D8F3DC;
+  --clr-green-pale: #EEF7EE;
+  --clr-text:       #1A2E1A;
+  --clr-text-med:   #4A6741;
+  --clr-text-muted: #7A9A74;
+  --clr-sidebar:    #192819;
+  --clr-accent:     #52B788;
+  --clr-danger:     #C0392B;
+  --clr-danger-bg:  #FEF2F2;
+  --clr-warning:    #B45309;
+  --clr-warning-bg: #FFFBEB;
+}
+
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
-    @apply antialiased font-sans;
+    @apply antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--clr-bg);
+    color: var(--clr-text);
+    font-size: 14px;
   }
 
-  /* Scrollbar personalizada */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-gray-900; }
-  ::-webkit-scrollbar-thumb { @apply bg-gray-600 rounded-full; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-500; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--clr-border-2); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--clr-text-muted); }
+
+  ::selection { background: rgba(82,183,136,0.2); }
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-brand-500 hover:bg-brand-600 active:bg-brand-700
-           text-white font-semibold px-4 py-2 rounded-lg
-           transition-colors duration-150 focus:outline-none
-           focus:ring-2 focus:ring-brand-400 focus:ring-offset-2
-           focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed;
+
+  /* ─── Botão primário (verde) ─── */
+  .btn-action, .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+           font-semibold text-sm transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-offset-1
+           disabled:opacity-40 disabled:cursor-not-allowed;
+    background: var(--clr-green);
+    color: #FFFFFF;
+    focus-ring-color: var(--clr-green);
+    letter-spacing: 0.01em;
+  }
+  .btn-action:hover:not(:disabled), .btn-primary:hover:not(:disabled) {
+    background: var(--clr-green-med);
+  }
+  .btn-action:active:not(:disabled), .btn-primary:active:not(:disabled) {
+    background: #1B4332;
+    transform: scale(0.97);
   }
 
-  .btn-secondary {
-    @apply bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold
-           px-4 py-2 rounded-lg transition-colors duration-150
-           focus:outline-none focus:ring-2 focus:ring-gray-500
-           disabled:opacity-50 disabled:cursor-not-allowed;
+  /* ─── Botão secundário ─── */
+  .btn-bakery, .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+           font-semibold text-sm transition-all duration-150
+           focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed;
+    background: var(--clr-surface);
+    color: var(--clr-text);
+    border: 1px solid var(--clr-border);
+  }
+  .btn-bakery:hover:not(:disabled), .btn-secondary:hover:not(:disabled) {
+    background: var(--clr-green-pale);
+    border-color: var(--clr-border-2);
   }
 
+  /* ─── Botão de perigo ─── */
   .btn-danger {
-    @apply bg-red-600 hover:bg-red-700 text-white font-semibold
-           px-4 py-2 rounded-lg transition-colors duration-150
-           disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+           font-semibold text-sm transition-all duration-150
+           focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed;
+    background: var(--clr-danger);
+    color: #FFFFFF;
   }
+  .btn-danger:hover:not(:disabled) { background: #991B1B; }
+  .btn-danger:active:not(:disabled) { background: #7F1D1D; }
 
+  /* ─── Botão de sucesso ─── */
   .btn-success {
-    @apply bg-green-600 hover:bg-green-700 text-white font-semibold
-           px-4 py-2 rounded-lg transition-colors duration-150
-           disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+           font-semibold text-sm transition-all duration-150
+           focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed;
+    background: var(--clr-green-med);
+    color: #FFFFFF;
+  }
+  .btn-success:hover:not(:disabled) { background: var(--clr-green); }
+
+  /* ─── Card ─── */
+  .bakery-card, .card {
+    @apply bg-white rounded-xl p-6;
+    border: 1px solid var(--clr-border);
+    box-shadow: 0 1px 4px rgba(45,106,79,0.06);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .bakery-card:hover, .card:hover {
+    box-shadow: 0 6px 20px rgba(45,106,79,0.1);
+    transform: translateY(-1px);
   }
 
-  .card {
-    @apply bg-gray-800 border border-gray-700 rounded-xl p-4;
+  /* ─── Product tile ─── */
+  .product-tile {
+    @apply flex flex-col justify-between p-3 rounded-xl cursor-pointer select-none bg-white;
+    border: 1px solid var(--clr-border);
+    min-height: 82px;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s, transform 0.12s;
+  }
+  .product-tile:hover {
+    border-color: var(--clr-green-med);
+    box-shadow: 0 4px 16px rgba(45,106,79,0.12);
+    background: var(--clr-green-pale);
+    transform: translateY(-1px);
+  }
+  .product-tile:active {
+    background: var(--clr-green-lite);
+    transform: scale(0.97);
+    transition-duration: 0.07s;
   }
 
-  .input {
-    @apply bg-gray-700 border border-gray-600 text-gray-100
-           rounded-lg px-3 py-2 w-full focus:outline-none
-           focus:ring-2 focus:ring-brand-500 focus:border-transparent
-           placeholder-gray-400 text-sm;
+  /* ─── Input ─── */
+  .bakery-input, .input {
+    @apply w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-150
+           focus:outline-none bg-white;
+    border: 1px solid var(--clr-border);
+    color: var(--clr-text);
+  }
+  .bakery-input:focus, .input:focus {
+    border-color: var(--clr-green-med);
+    box-shadow: 0 0 0 3px rgba(64,145,108,0.12);
+  }
+  .bakery-input::placeholder, .input::placeholder { color: var(--clr-text-muted); }
+
+  /* Select */
+  select.input, select.bakery-input {
+    @apply cursor-pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%237A9A74'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    appearance: none;
   }
 
+  /* ─── Label ─── */
   .label {
-    @apply block text-sm font-medium text-gray-300 mb-1;
+    @apply block text-xs font-semibold mb-1.5 uppercase tracking-wide;
+    color: var(--clr-text-med);
+    letter-spacing: 0.07em;
   }
 
-  .badge-a { @apply bg-green-900 text-green-300 text-xs font-bold px-2 py-0.5 rounded; }
-  .badge-b { @apply bg-yellow-900 text-yellow-300 text-xs font-bold px-2 py-0.5 rounded; }
-  .badge-c { @apply bg-gray-700 text-gray-300 text-xs font-bold px-2 py-0.5 rounded; }
+  /* ─── Badges ─── */
+  .badge-a {
+    @apply inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-md;
+    background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0;
+  }
+  .badge-b {
+    @apply inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-md;
+    background: var(--clr-warning-bg); color: var(--clr-warning); border: 1px solid #FDE68A;
+  }
+  .badge-c {
+    @apply inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-md;
+    background: var(--clr-green-pale); color: var(--clr-text-med); border: 1px solid var(--clr-border);
+  }
+
+  /* ─── Sidebar nav ─── */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium
+           transition-colors duration-150 cursor-pointer;
+    color: rgba(180, 220, 180, 0.55);
+  }
+  .nav-item:hover {
+    background: rgba(255,255,255,0.07);
+    color: rgba(220, 245, 220, 0.9);
+  }
+
+  .nav-item-active {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold cursor-pointer;
+    background: var(--clr-green-med);
+    color: #FFFFFF;
+  }
+
+  /* ─── Tabela ─── */
+  .tbl-row {
+    @apply transition-colors;
+    border-bottom: 1px solid var(--clr-bg);
+  }
+  .tbl-row:hover { background: var(--clr-green-pale); }
+
+  /* ─── Fade in ─── */
+  .animate-fade-in {
+    animation: fadeIn 0.18s ease-out both;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
 }

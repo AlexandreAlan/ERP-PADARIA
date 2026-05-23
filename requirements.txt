@@ -1,0 +1,13 @@
+# Framework Web
+Flask>=3.0.0
+Flask-CORS>=4.0.0
+
+# Banco de Dados
+Flask-SQLAlchemy>=3.1.1
+SQLAlchemy>=2.0.36
+
+# Impressora Térmica (opcional)
+python-escpos>=3.1
+
+# Segurança para senhas
+Werkzeug>=3.0.1

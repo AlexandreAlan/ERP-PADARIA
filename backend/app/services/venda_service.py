@@ -2,21 +2,59 @@ from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 import uuid
+import httpx
+import asyncio
 
 from fastapi import HTTPException, status
 from sqlalchemy import select, update
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.caixa import SessaoCaixa
-from app.models.estoque import MovimentacaoEstoque
-from app.models.produto import Produto
+from app.config import get_settings
 from app.models.venda import Venda, ItemVenda, Pagamento
+from app.models.produto import Produto
+from app.models.estoque import MovimentacaoEstoque
 from app.models.auditoria import LogAuditoria
-from app.schemas.venda import VendaCreate, VendaRead
+from app.models.caixa import SessaoCaixa
+from app.schemas.venda import VendaCreate
 
+settings = get_settings()
 
 TWO = Decimal("0.01")
 
+async def notify_whatsapp_receipt(venda_id: int, db: AsyncSession, phone: str):
+    """Envia o recibo via WhatsApp em segundo plano."""
+    try:
+        result = await db.execute(
+            select(Venda).where(Venda.id == venda_id)
+        )
+        venda = result.scalar_one_or_none()
+        if not venda: return
+
+        # Simplifica dados para o serviço de WhatsApp
+        payload = {
+            "to": phone,
+            "venda": {
+                "id": venda.id,
+                "total": str(venda.total),
+                "subtotal": str(venda.subtotal),
+                "desconto_valor": str(venda.desconto_valor),
+                "created_at": venda.created_at.isoformat(),
+                "itens": [
+                    {
+                        "produto_nome": item.produto.nome if item.produto else "Produto",
+                        "quantidade": str(item.quantidade),
+                        "preco_unit": str(item.preco_unit),
+                        "total_item": str(item.total_item)
+                    } for item in venda.itens
+                ]
+            }
+        }
+        
+        async with httpx.AsyncClient() as client:
+            await client.post(f"{settings.whatsapp_api_url}/send-receipt", json=payload, timeout=5.0)
+    except Exception as e:
+        print(f"[WA] Erro ao disparar notificação: {e}")
 
 async def criar_venda(
     payload: VendaCreate,
@@ -167,8 +205,16 @@ async def criar_venda(
     db.add(log)
     await db.flush()
 
-    await db.refresh(venda, ["itens", "pagamentos"])
-    return venda
+    # Carrega relacionamentos de forma eager para evitar lazy-load em contexto async
+    result = await db.execute(
+        select(Venda)
+        .options(
+            selectinload(Venda.itens).selectinload(ItemVenda.produto),
+            selectinload(Venda.pagamentos),
+        )
+        .where(Venda.id == venda.id)
+    )
+    return result.scalar_one()
 
 
 async def cancelar_venda(
@@ -240,8 +286,15 @@ async def cancelar_venda(
     ))
 
     await db.flush()
-    await db.refresh(venda)
-    return venda
+    result = await db.execute(
+        select(Venda)
+        .options(
+            selectinload(Venda.itens).selectinload(ItemVenda.produto),
+            selectinload(Venda.pagamentos),
+        )
+        .where(Venda.id == venda.id)
+    )
+    return result.scalar_one()
 
 
 # ── Helpers privados ───────────────────────────────────────────────────────────

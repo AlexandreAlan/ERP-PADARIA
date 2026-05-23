@@ -1,13 +1,8 @@
-"""
-DashboardService — Cálculo de KPIs, Curva ABC e alertas de estoque.
-Todas as queries são somente leitura; nenhuma transação de escrita aqui.
-"""
-
-from datetime import datetime, date
+from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 
-from sqlalchemy import select, func, and_, cast, Numeric
+from sqlalchemy import select, func, and_, cast, Numeric, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.produto import Produto
@@ -22,25 +17,34 @@ from app.schemas.dashboard import (
 
 TWO = Decimal("0.01")
 
-
 async def get_dashboard(
     data_inicio: date,
     data_fim: date,
     db: AsyncSession,
     caixa_id: Optional[int] = None,
 ) -> DashboardResponse:
+    # 1. KPIs do período
     kpis = await calcular_kpis(data_inicio, data_fim, db, caixa_id)
+    
+    # 2. Vendas por dia (Gráfico)
     vendas_dia = await vendas_por_dia(data_inicio, data_fim, db)
+    
+    # 3. Alertas de estoque com criticidade
     alertas = await alertas_estoque(db)
+    
+    # 4. Curva ABC
     abc = await curva_abc(data_inicio, data_fim, db)
+    
+    # 5. Métricas Adicionais de "Crescimento"
+    comparativo = await calcular_comparativo(data_inicio, data_fim, db)
 
     return DashboardResponse(
         kpis=kpis,
         vendas_por_dia=vendas_dia,
         alertas_estoque=alertas,
         curva_abc=abc,
+        crescimento=comparativo
     )
-
 
 async def calcular_kpis(
     data_inicio: date,
@@ -57,7 +61,7 @@ async def calcular_kpis(
         Venda.created_at <= dt_fim,
     ]
 
-    # Faturamento / desconto / totais
+    # Query principal de vendas
     result = await db.execute(
         select(
             func.count(Venda.id).label("qtd_vendas"),
@@ -68,7 +72,7 @@ async def calcular_kpis(
     )
     row = result.one()
 
-    # Custo e lucro (via itens)
+    # Query de custos (via itens)
     custo_result = await db.execute(
         select(
             func.coalesce(func.sum(ItemVenda.custo_unit * ItemVenda.quantidade), 0).label("custo_total"),
@@ -83,6 +87,7 @@ async def calcular_kpis(
     faturamento_liquido = Decimal(str(row.faturamento_liquido)).quantize(TWO, ROUND_HALF_UP)
     custo_total = Decimal(str(custo_row.custo_total)).quantize(TWO, ROUND_HALF_UP)
     lucro_bruto = (faturamento_liquido - custo_total).quantize(TWO, ROUND_HALF_UP)
+    
     margem_media = (lucro_bruto / faturamento_liquido * 100).quantize(TWO, ROUND_HALF_UP) if faturamento_liquido else Decimal("0.00")
     qtd_vendas = int(row.qtd_vendas)
     ticket_medio = (faturamento_liquido / qtd_vendas).quantize(TWO, ROUND_HALF_UP) if qtd_vendas else Decimal("0.00")
@@ -97,7 +102,6 @@ async def calcular_kpis(
         ticket_medio=ticket_medio,
         itens_vendidos=int(custo_row.itens_vendidos),
     )
-
 
 async def vendas_por_dia(
     data_inicio: date,
@@ -127,14 +131,14 @@ async def vendas_por_dia(
         for row in result
     ]
 
-
 async def alertas_estoque(db: AsyncSession) -> list[AlertaEstoque]:
+    # Produtos abaixo do mínimo, ordenados pelo mais crítico (menor saldo relativo)
     result = await db.execute(
         select(Produto).where(
             Produto.ativo == True,
             Produto.estoque_minimo > 0,
             Produto.estoque_atual <= Produto.estoque_minimo,
-        ).order_by(Produto.estoque_atual)
+        ).order_by(Produto.estoque_atual / func.nullif(Produto.estoque_minimo, 0))
     )
     produtos = result.scalars().all()
 
@@ -145,10 +149,10 @@ async def alertas_estoque(db: AsyncSession) -> list[AlertaEstoque]:
             estoque_atual=p.estoque_atual,
             estoque_minimo=p.estoque_minimo,
             unidade_medida=p.unidade_medida,
+            urgente=p.estoque_atual <= (p.estoque_minimo * Decimal("0.3")) # Menos de 30% do mínimo é urgente
         )
         for p in produtos
     ]
-
 
 async def curva_abc(
     data_inicio: date,
@@ -183,6 +187,7 @@ async def curva_abc(
         fat_pct = (fat / total_geral * 100).quantize(TWO, ROUND_HALF_UP)
         acumulado = (acumulado + fat_pct).quantize(TWO, ROUND_HALF_UP)
 
+        # Classificação clássica ABC (80/15/5)
         if acumulado <= Decimal("80"):
             classe = "A"
         elif acumulado <= Decimal("95"):
@@ -201,3 +206,22 @@ async def curva_abc(
         ))
 
     return itens
+
+async def calcular_comparativo(data_inicio: date, data_fim: date, db: AsyncSession) -> dict:
+    """Calcula o crescimento comparando com o período anterior equivalente."""
+    diff = (data_fim - data_inicio).days + 1
+    inicio_anterior = data_inicio - timedelta(days=diff)
+    fim_anterior = data_inicio - timedelta(days=1)
+    
+    atual = await calcular_kpis(data_inicio, data_fim, db)
+    anterior = await calcular_kpis(inicio_anterior, fim_anterior, db)
+    
+    def pct_diff(v_atual, v_ant):
+        if not v_ant: return 0
+        return float(((v_atual - v_ant) / v_ant * 100).quantize(TWO, ROUND_HALF_UP))
+
+    return {
+        "faturamento": pct_diff(atual.faturamento_liquido, anterior.faturamento_liquido),
+        "vendas": pct_diff(Decimal(atual.quantidade_vendas), Decimal(anterior.quantidade_vendas)),
+        "lucro": pct_diff(atual.lucro_bruto, anterior.lucro_bruto)
+    }

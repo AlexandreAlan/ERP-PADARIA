@@ -85,6 +85,10 @@ class Settings(BaseSettings):
     upload_dir: str = "./uploads"
     max_upload_size_mb: int = 5
 
+    # WhatsApp Service
+    whatsapp_api_url: str = "http://localhost:3001"
+    manager_phone: str = "" # Número para alertas de estoque (ex: 5511999999999)
+
 
 @lru_cache
 def get_settings() -> Settings:

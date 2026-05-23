@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="layout-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">🥖</div>
+                <h1>PADARIA</h1>
+                <div class="usuario-info">
+                    <span class="usuario-avatar" id="usuarioAvatar">👤</span>
+                    <div>
+                        <div class="usuario-nome" id="usuarioNome">-</div>
+                        <div class="usuario-cargo" id="usuarioCargo">-</div>
+                    </div>
+                </div>
+            </div>
+            <nav class="menu-nav">
+                <a href="/" class="menu-item"><span class="menu-item-icone">📊</span><span>Início</span></a>
+                <a href="/pdv" class="menu-item"><span class="menu-item-icone">🛒</span><span>Caixa</span></a>
+                <a href="/produtos" class="menu-item ativo"><span class="menu-item-icone">📦</span><span>Produtos</span></a>
+                <a href="/estoque" class="menu-item"><span class="menu-item-icone">📋</span><span>Estoque</span></a>
+                <a href="/clientes" class="menu-item"><span class="menu-item-icone">👥</span><span>Clientes</span></a>
+                <a href="/relatorios" class="menu-item"><span class="menu-item-icone">📈</span><span>Relatórios</span></a>
+                <a href="/logout" class="menu-item menu-sair"><span class="menu-item-icone">🚪</span><span>Sair</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header-topo">
+                <h2>📦 Produtos</h2>
+                <button class="botao-grande btn-sucesso" onclick="abrirModalProduto()" style="padding: 12px 25px;">
+                    <span class="botao-icone">➕</span> Novo
+                </button>
+            </header>
+
+            <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <input type="text" id="filtroNome" placeholder="🔍 Buscar produto..."
+                           style="flex: 1; min-width: 200px; padding: 15px; border: 2px solid #ecf0f1; border-radius: 12px; font-size: 16px;">
+                    <select id="filtroCategoria" style="padding: 15px; border: 2px solid #ecf0f1; border-radius: 12px; font-size: 16px;">
+                        <option value="">Todas categorias</option>
+                        <option value="Padaria">🍞 Padaria</option>
+                        <option value="Confeitaria">🎂 Confeitaria</option>
+                        <option value="Bebidas">🥤 Bebidas</option>
+                        <option value="Frios">🧀 Frios</option>
+                        <option value="Outros">📦 Outros</option>
+                    </select>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="tabela-visual">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Código</th>
+                                <th>Categoria</th>
+                                <th>Custo</th>
+                                <th>Venda</th>
+                                <th>Estoque</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaProdutos"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Produto -->
+    <div class="modal-overlay" id="modalProduto" style="display: none;">
+        <div class="modal-conteudo">
+            <div class="modal-titulo">
+                <span id="modalTituloIcon">📦</span>
+                <span id="modalTituloTexto">Novo Produto</span>
+            </div>
+            <input type="hidden" id="modalProdutoId">
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">📝 Nome do Produto</label>
+            <input type="text" id="modalNome" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 15px;">
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">📷 Código de Barras</label>
+            <input type="text" id="modalCodigoBarras" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 15px;">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">💰 Preço Custo</label>
+                    <input type="number" id="modalPrecoCusto" step="0.01" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">🏷️ Preço Venda</label>
+                    <input type="number" id="modalPrecoVenda" step="0.01" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">📊 Quantidade</label>
+                    <input type="number" id="modalQuantidade" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">📏 Unidade</label>
+                    <select id="modalUnidade" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px;">
+                        <option value="UN">Unidade</option>
+                        <option value="KG">Quilo</option>
+                        <option value="LT">Litro</option>
+                        <option value="CX">Caixa</option>
+                    </select>
+                </div>
+            </div>
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">🏷️ Categoria</label>
+            <select id="modalCategoria" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 15px;">
+                <option value="Padaria">🍞 Padaria</option>
+                <option value="Confeitaria">🎂 Confeitaria</option>
+                <option value="Bebidas">🥤 Bebidas</option>
+                <option value="Frios">🧀 Frios</option>
+                <option value="Outros">📦 Outros</option>
+            </select>
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">📅 Validade (opcional)</label>
+            <input type="date" id="modalValidade" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 15px;">
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">⚠️ Estoque Mínimo</label>
+            <input type="number" id="modalEstoqueMinimo" value="5" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 20px;">
+
+            <div class="modal-acoes">
+                <button type="button" onclick="salvarProduto()" class="botao-grande btn-sucesso" style="flex: 1;">💾 Salvar</button>
+                <button type="button" onclick="fecharModal()" class="botao-grande btn-perigo" style="flex: 1;">🚫 Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let produtos = [];
+
+        async function carregarUsuario() {
+            const response = await fetch('/api/usuario/atual');
+            if (response.ok) {
+                const u = await response.json();
+                document.getElementById('usuarioAvatar').textContent = u.avatar;
+                document.getElementById('usuarioNome').textContent = u.nome;
+                document.getElementById('usuarioCargo').textContent = u.cargo;
+            }
+        }
+        carregarUsuario();
+
+        async function carregarProdutos() {
+            const response = await fetch('/api/produtos');
+            produtos = await response.json();
+            renderizarTabela();
+        }
+        carregarProdutos();
+
+        document.getElementById('filtroNome').addEventListener('input', renderizarTabela);
+        document.getElementById('filtroCategoria').addEventListener('input', renderizarTabela);
+
+        function renderizarTabela() {
+            const filtroNome = document.getElementById('filtroNome').value.toLowerCase();
+            const filtroCategoria = document.getElementById('filtroCategoria').value;
+
+            const filtrados = produtos.filter(p => {
+                const matchNome = p.nome.toLowerCase().includes(filtroNome);
+                const matchCat = !filtroCategoria || p.categoria === filtroCategoria;
+                return matchNome && matchCat;
+            });
+
+            const tbody = document.getElementById('tabelaProdutos');
+            if (filtrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #95a5a6;">Nenhum produto encontrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtrados.map(p => `
+                <tr>
+                    <td><strong>${p.nome}</strong></td>
+                    <td>${p.codigo_barras}</td>
+                    <td>${p.categoria || '-'}</td>
+                    <td>${formatarMoeda(p.preco_custo)}</td>
+                    <td style="color: #27ae60; font-weight: 700;">${formatarMoeda(p.preco_venda)}</td>
+                    <td>${p.quantidade} ${p.unidade}</td>
+                    <td>
+                        <button onclick="editarProduto(${p.id})" style="padding: 8px 12px; margin-right: 5px; border: none; border-radius: 8px; cursor: pointer; background: #3498db; color: white;">✏️</button>
+                        <button onclick="excluirProduto(${p.id})" style="padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; background: #e74c3c; color: white;">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function abrirModalProduto() {
+            document.getElementById('modalProduto').style.display = 'flex';
+            document.getElementById('modalTituloTexto').textContent = 'Novo Produto';
+            document.getElementById('modalProdutoId').value = '';
+            document.getElementById('modalNome').value = '';
+            document.getElementById('modalCodigoBarras').value = '';
+            document.getElementById('modalPrecoCusto').value = '';
+            document.getElementById('modalPrecoVenda').value = '';
+            document.getElementById('modalQuantidade').value = '0';
+            document.getElementById('modalUnidade').value = 'UN';
+            document.getElementById('modalCategoria').value = 'Padaria';
+            document.getElementById('modalValidade').value = '';
+            document.getElementById('modalEstoqueMinimo').value = '5';
+        }
+
+        function fecharModal() {
+            document.getElementById('modalProduto').style.display = 'none';
+        }
+
+        async function editarProduto(id) {
+            const response = await fetch(`/api/produtos/${id}`);
+            const p = await response.json();
+            document.getElementById('modalProduto').style.display = 'flex';
+            document.getElementById('modalTituloTexto').textContent = 'Editar Produto';
+            document.getElementById('modalProdutoId').value = p.id;
+            document.getElementById('modalNome').value = p.nome;
+            document.getElementById('modalCodigoBarras').value = p.codigo_barras;
+            document.getElementById('modalPrecoCusto').value = p.preco_custo;
+            document.getElementById('modalPrecoVenda').value = p.preco_venda;
+            document.getElementById('modalQuantidade').value = p.quantidade;
+            document.getElementById('modalUnidade').value = p.unidade;
+            document.getElementById('modalCategoria').value = p.categoria || 'Padaria';
+            document.getElementById('modalValidade').value = p.validade || '';
+            document.getElementById('modalEstoqueMinimo').value = p.estoque_minimo;
+        }
+
+        async function salvarProduto() {
+            const id = document.getElementById('modalProdutoId').value;
+            const produto = {
+                nome: document.getElementById('modalNome').value,
+                codigo_barras: document.getElementById('modalCodigoBarras').value,
+                preco_custo: parseFloat(document.getElementById('modalPrecoCusto').value) || 0,
+                preco_venda: parseFloat(document.getElementById('modalPrecoVenda').value) || 0,
+                quantidade: parseInt(document.getElementById('modalQuantidade').value) || 0,
+                unidade: document.getElementById('modalUnidade').value,
+                categoria: document.getElementById('modalCategoria').value,
+                validade: document.getElementById('modalValidade').value || null,
+                estoque_minimo: parseInt(document.getElementById('modalEstoqueMinimo').value) || 5
+            };
+
+            if (!produto.nome || !produto.codigo_barras) {
+                alert('⚠️ Preencha nome e código de barras');
+                return;
+            }
+
+            try {
+                const url = id ? `/api/produtos/${id}` : '/api/produtos';
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(produto)
+                });
+                if (response.ok) {
+                    alert('✅ Produto salvo!');
+                    fecharModal();
+                    carregarProdutos();
+                } else {
+                    const erro = await response.json();
+                    alert('⚠️ ' + erro.erro);
+                }
+            } catch (erro) {
+                alert('❌ Erro ao salvar');
+            }
+        }
+
+        async function excluirProduto(id) {
+            if (!confirm('Deseja excluir este produto?')) return;
+            await fetch(`/api/produtos/${id}`, { method: 'DELETE' });
+            alert('✅ Produto excluído!');
+            carregarProdutos();
+        }
+
+        function formatarMoeda(v) {
+            return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+    </script>
+</body>
+</html>

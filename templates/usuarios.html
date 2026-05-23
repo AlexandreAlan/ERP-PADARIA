@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="layout-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">🥖</div>
+                <h1>PADARIA</h1>
+                <div class="usuario-info">
+                    <span class="usuario-avatar" id="usuarioAvatar">👤</span>
+                    <div>
+                        <div class="usuario-nome" id="usuarioNome">-</div>
+                        <div class="usuario-cargo" id="usuarioCargo">-</div>
+                    </div>
+                </div>
+            </div>
+            <nav class="menu-nav">
+                <a href="/" class="menu-item"><span class="menu-item-icone">📊</span><span>Início</span></a>
+                <a href="/pdv" class="menu-item"><span class="menu-item-icone">🛒</span><span>Caixa</span></a>
+                <a href="/produtos" class="menu-item"><span class="menu-item-icone">📦</span><span>Produtos</span></a>
+                <a href="/estoque" class="menu-item"><span class="menu-item-icone">📋</span><span>Estoque</span></a>
+                <a href="/clientes" class="menu-item"><span class="menu-item-icone">👥</span><span>Clientes</span></a>
+                <a href="/relatorios" class="menu-item"><span class="menu-item-icone">📈</span><span>Relatórios</span></a>
+                <a href="/usuarios" class="menu-item ativo"><span class="menu-item-icone">👤</span><span>Usuários</span></a>
+                <a href="/logout" class="menu-item menu-sair"><span class="menu-item-icone">🚪</span><span>Sair</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header-topo">
+                <h2>👤 Usuários do Sistema</h2>
+                <button class="botao-grande btn-sucesso" onclick="abrirModalUsuario()" style="padding: 12px 25px;">
+                    <span class="botao-icone">➕</span> Novo
+                </button>
+            </header>
+
+            <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                <table class="tabela-visual">
+                    <thead>
+                        <tr>
+                            <th>Avatar</th>
+                            <th>Nome</th>
+                            <th>Usuário</th>
+                            <th>Cargo</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaUsuarios"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Usuário -->
+    <div class="modal-overlay" id="modalUsuario" style="display: none;">
+        <div class="modal-conteudo">
+            <div class="modal-titulo">
+                <span>👤</span>
+                <span id="modalTituloTexto">Novo Usuário</span>
+            </div>
+            <input type="hidden" id="modalUsuarioId">
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">📝 Nome Completo</label>
+            <input type="text" id="modalNome" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 15px;">
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">👤 Nome de Usuário (Login)</label>
+            <input type="text" id="modalUsername" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 15px;">
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">🔐 Senha</label>
+            <input type="password" id="modalSenha" placeholder="Deixe em branco para manter"
+                   style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 15px;">
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">🏷️ Cargo</label>
+            <select id="modalCargo" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 15px;">
+                <option value="administrador">👨‍💼 Administrador</option>
+                <option value="caixa">🧑‍🍳 Caixa</option>
+                <option value="estoque">📦 Estoquista</option>
+            </select>
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">😊 Avatar</label>
+            <div id="avataresGrid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;"></div>
+            <input type="hidden" id="modalAvatar" value="👤">
+
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">✅ Status</label>
+            <select id="modalAtivo" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; margin-bottom: 20px;">
+                <option value="true">✅ Ativo</option>
+                <option value="false">🚫 Inativo</option>
+            </select>
+
+            <div class="modal-acoes">
+                <button onclick="salvarUsuario()" class="botao-grande btn-sucesso" style="flex: 1;">💾 Salvar</button>
+                <button onclick="fecharModal()" class="botao-grande btn-perigo" style="flex: 1;">🚫 Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let usuarios = [];
+        const avatares = ['👨‍💼','🧑‍💼','👩‍💼','🧑‍🍳','👨‍🍳','👩‍🍳','🧑‍🔧','👨‍🔧','👩‍🔧','🧑‍🏭','👨‍🏭','👩‍🏭','👤','⭐','🌟'];
+
+        // Renderiza grid de avatares
+        function renderizarAvatares() {
+            const grid = document.getElementById('avataresGrid');
+            grid.innerHTML = avatares.map(emoji =>
+                `<button type="button" class="btn-avatar" data-avatar="${emoji}"
+                  style="font-size: 28px; padding: 10px; border: 2px solid #ecf0f1; border-radius: 8px; cursor: pointer; background: white;">${emoji}</button>`
+            ).join('');
+
+            grid.querySelectorAll('.btn-avatar').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    grid.querySelectorAll('.btn-avatar').forEach(b => b.style.borderColor = '#ecf0f1');
+                    this.style.borderColor = '#e67e22';
+                    document.getElementById('modalAvatar').value = this.dataset.avatar;
+                });
+            });
+        }
+        renderizarAvatares();
+
+        async function carregarUsuario() {
+            const response = await fetch('/api/usuario/atual');
+            if (response.ok) {
+                const u = await response.json();
+                document.getElementById('usuarioAvatar').textContent = u.avatar;
+                document.getElementById('usuarioNome').textContent = u.nome;
+                document.getElementById('usuarioCargo').textContent = u.cargo;
+            }
+        }
+        carregarUsuario();
+
+        async function carregarUsuarios() {
+            const response = await fetch('/api/usuarios');
+            usuarios = await response.json();
+            renderizarTabela();
+        }
+        carregarUsuarios();
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('tabelaUsuarios');
+            if (usuarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px;">Nenhum usuário</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = usuarios.map(u => `
+                <tr>
+                    <td style="font-size: 32px;">${u.avatar}</td>
+                    <td><strong>${u.nome}</strong></td>
+                    <td>@${u.username}</td>
+                    <td>${u.cargo}</td>
+                    <td>
+                        <span class="status-badge ${u.ativo ? 'status-ok' : 'status-baixo'}">
+                            ${u.ativo ? '✅ Ativo' : '🚫 Inativo'}
+                        </span>
+                    </td>
+                    <td>
+                        <button onclick="editarUsuario(${u.id})"
+                                style="padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; background: #3498db; color: white;">
+                            ✏️ Editar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function abrirModalUsuario() {
+            document.getElementById('modalUsuario').style.display = 'flex';
+            document.getElementById('modalTituloTexto').textContent = 'Novo Usuário';
+            document.getElementById('modalUsuarioId').value = '';
+            document.getElementById('modalNome').value = '';
+            document.getElementById('modalUsername').value = '';
+            document.getElementById('modalSenha').value = '';
+            document.getElementById('modalCargo').value = 'caixa';
+            document.getElementById('modalAvatar').value = '👤';
+            document.getElementById('modalAtivo').value = 'true';
+            document.getElementById('avataresGrid').querySelectorAll('.btn-avatar').forEach(b => b.style.borderColor = '#ecf0f1');
+        }
+
+        function fecharModal() {
+            document.getElementById('modalUsuario').style.display = 'none';
+        }
+
+        // Seleção de avatar
+        document.querySelectorAll('.btn-avatar').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.btn-avatar').forEach(b => b.style.borderColor = '#ecf0f1');
+                this.style.borderColor = '#e67e22';
+                document.getElementById('modalAvatar').value = this.dataset.avatar;
+            });
+        });
+
+        async function editarUsuario(id) {
+            const u = usuarios.find(x => x.id === id);
+            if (!u) return;
+
+            document.getElementById('modalUsuario').style.display = 'flex';
+            document.getElementById('modalTituloTexto').textContent = 'Editar Usuário';
+            document.getElementById('modalUsuarioId').value = u.id;
+            document.getElementById('modalNome').value = u.nome;
+            document.getElementById('modalUsername').value = u.username;
+            document.getElementById('modalSenha').value = '';
+            document.getElementById('modalCargo').value = u.cargo;
+            document.getElementById('modalAvatar').value = u.avatar;
+            document.getElementById('modalAtivo').value = u.ativo.toString();
+
+            document.getElementById('avataresGrid').querySelectorAll('.btn-avatar').forEach(b => {
+                b.style.borderColor = b.dataset.avatar === u.avatar ? '#e67e22' : '#ecf0f1';
+            });
+        }
+
+        async function salvarUsuario() {
+            const id = document.getElementById('modalUsuarioId').value;
+            const usuario = {
+                nome: document.getElementById('modalNome').value,
+                username: document.getElementById('modalUsername').value,
+                cargo: document.getElementById('modalCargo').value,
+                avatar: document.getElementById('modalAvatar').value,
+                ativo: document.getElementById('modalAtivo').value === 'true'
+            };
+
+            const senha = document.getElementById('modalSenha').value;
+            if (senha) usuario.senha = senha;
+
+            if (!usuario.nome || !usuario.username) {
+                alert('⚠️ Preencha nome e usuário');
+                return;
+            }
+
+            if (!id && !senha) {
+                alert('⚠️ Defina uma senha para novo usuário');
+                return;
+            }
+
+            try {
+                const url = id ? `/api/usuarios/${id}` : '/api/usuarios';
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(usuario)
+                });
+                if (response.ok) {
+                    alert('✅ Usuário salvo!');
+                    fecharModal();
+                    carregarUsuarios();
+                } else {
+                    const erro = await response.json();
+                    alert('⚠️ ' + erro.erro);
+                }
+            } catch (erro) {
+                alert('❌ Erro');
+            }
+        }
+    </script>
+</body>
+</html>

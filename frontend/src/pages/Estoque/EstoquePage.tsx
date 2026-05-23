@@ -1,10 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import toast from 'react-hot-toast'
 import { api } from '@/config/api'
 import { formatBRL } from '@/utils/currency'
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Produto {
   id: number
@@ -41,7 +39,51 @@ const emptyForm = {
   descricao: '',
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+function StockBar({ atual, minimo }: { atual: number; minimo: number }) {
+  const [width, setWidth] = useState(0)
+
+  useEffect(() => {
+    const max = Math.max(minimo * 4, atual * 1.2, 1)
+    const pct = Math.min((atual / max) * 100, 100)
+    const t = setTimeout(() => setWidth(pct), 120)
+    return () => clearTimeout(t)
+  }, [atual, minimo])
+
+  const cor = atual <= 0       ? 'var(--clr-danger)'
+            : atual <= minimo  ? '#F59E0B'
+            : 'var(--clr-green-med)'
+
+  return (
+    <div className="w-full h-1 rounded-full mt-1" style={{ background: 'var(--clr-bg)' }}>
+      <div
+        className="h-full rounded-full"
+        style={{
+          width: `${width}%`,
+          background: cor,
+          transition: 'width 0.65s cubic-bezier(0.22,0.61,0.36,1)',
+        }}
+      />
+    </div>
+  )
+}
+
+const IconClose = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 18L18 6M6 6l12 12"/>
+  </svg>
+)
+
+const IconWarning = () => (
+  <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--clr-warning)' }}>
+    <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+  </svg>
+)
+
+const IconBarcode = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/>
+  </svg>
+)
 
 export default function EstoquePage() {
   const [busca, setBusca]           = useState('')
@@ -52,8 +94,6 @@ export default function EstoquePage() {
   const [confirmDel, setConfirmDel] = useState<Produto | null>(null)
   const barcodeInputRef             = useRef<HTMLInputElement>(null)
   const queryClient                 = useQueryClient()
-
-  // ── Queries ──────────────────────────────────────────────────────────────────
 
   const { data: produtos, isLoading } = useQuery(
     ['produtos', busca],
@@ -67,8 +107,6 @@ export default function EstoquePage() {
     { staleTime: 60_000 }
   )
 
-  // ── Mutations ────────────────────────────────────────────────────────────────
-
   const criarM = useMutation(
     (payload: any) => api.post('/produtos', payload).then(r => r.data),
     {
@@ -77,7 +115,7 @@ export default function EstoquePage() {
         queryClient.invalidateQueries('produtos')
         fecharForm()
       },
-      onError: (e: any) => toast.error(e.response?.data?.detail || 'Erro ao cadastrar'),
+      onError: (e: any) => { toast.error(e.response?.data?.detail || 'Erro ao cadastrar') },
     }
   )
 
@@ -89,7 +127,7 @@ export default function EstoquePage() {
         queryClient.invalidateQueries('produtos')
         fecharForm()
       },
-      onError: (e: any) => toast.error(e.response?.data?.detail || 'Erro ao atualizar'),
+      onError: (e: any) => { toast.error(e.response?.data?.detail || 'Erro ao atualizar') },
     }
   )
 
@@ -101,7 +139,7 @@ export default function EstoquePage() {
         queryClient.invalidateQueries('produtos')
         setConfirmDel(null)
       },
-      onError: (e: any) => toast.error(e.response?.data?.detail || 'Erro ao remover'),
+      onError: (e: any) => { toast.error(e.response?.data?.detail || 'Erro ao remover') },
     }
   )
 
@@ -113,11 +151,9 @@ export default function EstoquePage() {
         queryClient.invalidateQueries('produtos')
         setAjuste(null)
       },
-      onError: (e: any) => toast.error(e.response?.data?.detail || 'Erro no ajuste'),
+      onError: (e: any) => { toast.error(e.response?.data?.detail || 'Erro no ajuste') },
     }
   )
-
-  // ── Helpers ──────────────────────────────────────────────────────────────────
 
   function abrirNovo() {
     setEditando(null)
@@ -171,15 +207,28 @@ export default function EstoquePage() {
     }
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────────
-
-  if (isLoading) return <div className="p-6 text-gray-400">Carregando...</div>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12" style={{ color: 'var(--clr-text-muted)' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--clr-border-2)', borderTopColor: 'var(--clr-green)' }} />
+          <span className="text-sm">Carregando produtos...</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-5" style={{ background: 'var(--clr-bg)', minHeight: '100vh' }}>
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-white">Estoque</h1>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--clr-text)' }}>Estoque</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>
+            {(produtos || []).length} produto{(produtos || []).length !== 1 ? 's' : ''} cadastrado{(produtos || []).length !== 1 ? 's' : ''}
+          </p>
+        </div>
         <div className="flex gap-3 items-center">
           <input
             type="text"
@@ -188,24 +237,27 @@ export default function EstoquePage() {
             onChange={e => setBusca(e.target.value)}
             className="input w-64"
           />
-          <button onClick={abrirNovo} className="btn-primary whitespace-nowrap">
+          <button onClick={abrirNovo} className="btn-action whitespace-nowrap">
             + Novo Produto
           </button>
         </div>
       </div>
 
       {/* Tabela */}
-      <div className="card overflow-x-auto">
+      <div
+        className="rounded-2xl overflow-hidden overflow-x-auto"
+        style={{ border: '1px solid var(--clr-border)', background: 'var(--clr-surface)' }}
+      >
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-gray-400 text-xs uppercase border-b border-gray-700">
-              <th className="text-left px-4 py-3">Produto</th>
-              <th className="text-left px-4 py-3">Categoria</th>
-              <th className="text-right px-4 py-3">Custo</th>
-              <th className="text-right px-4 py-3">Preço</th>
-              <th className="text-right px-4 py-3">Margem</th>
-              <th className="text-right px-4 py-3">Estoque</th>
-              <th className="text-center px-4 py-3">Status</th>
+            <tr style={{ borderBottom: '1px solid var(--clr-border)', background: 'var(--clr-green-pale)' }}>
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>Produto</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>Categoria</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>Custo</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>Preço</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>Margem</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>Estoque</th>
+              <th className="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>Status</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -213,45 +265,93 @@ export default function EstoquePage() {
             {(produtos || []).map((p: Produto, i: number) => (
               <tr
                 key={p.id}
-                className={`border-b border-gray-800 hover:bg-gray-800 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-900/30'}`}
+                style={{
+                  borderBottom: '1px solid var(--clr-border)',
+                  background: i % 2 === 0 ? 'var(--clr-surface)' : 'var(--clr-bg)',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-green-pale)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'var(--clr-surface)' : 'var(--clr-bg)'}
               >
                 <td className="px-4 py-3">
-                  <div className="font-medium text-white">{p.nome}</div>
-                  <div className="text-xs text-gray-500">{p.codigo_barras || 'S/Código'}</div>
+                  <div className="font-semibold" style={{ color: 'var(--clr-text)' }}>{p.nome}</div>
+                  <div className="text-xs font-mono mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>
+                    {p.codigo_barras ? (
+                      <span className="flex items-center gap-1">
+                        <IconBarcode />
+                        {p.codigo_barras}
+                      </span>
+                    ) : (
+                      <span>Sem código</span>
+                    )}
+                  </div>
                 </td>
-                <td className="px-4 py-3 text-gray-400">{p.categoria_nome || '—'}</td>
-                <td className="px-4 py-3 text-right font-mono text-gray-300">{formatBRL(p.preco_custo)}</td>
-                <td className="px-4 py-3 text-right font-mono text-white font-bold">{formatBRL(p.preco_venda)}</td>
-                <td className="px-4 py-3 text-right font-mono text-green-400">{Number(p.margem_lucro).toFixed(1)}%</td>
-                <td className="px-4 py-3 text-right font-mono">
-                  <span className={p.estoque_baixo ? 'text-red-400 font-bold' : 'text-gray-300'}>
+                <td className="px-4 py-3">
+                  <span
+                    className="text-xs font-medium px-2 py-0.5 rounded-full"
+                    style={{ background: 'var(--clr-green-lite)', color: 'var(--clr-green)' }}
+                  >
+                    {p.categoria_nome || '—'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-sm" style={{ color: 'var(--clr-text-muted)' }}>
+                  {formatBRL(p.preco_custo)}
+                </td>
+                <td className="px-4 py-3 text-right font-mono font-bold text-sm" style={{ color: 'var(--clr-text)' }}>
+                  {formatBRL(p.preco_venda)}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-sm font-semibold" style={{ color: 'var(--clr-green-med)' }}>
+                  {Number(p.margem_lucro).toFixed(1)}%
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-sm" style={{ minWidth: 100 }}>
+                  <span style={{ color: p.estoque_baixo ? 'var(--clr-danger)' : 'var(--clr-text)', fontWeight: p.estoque_baixo ? 700 : 400 }}>
                     {Number(p.estoque_atual).toFixed(p.unidade_medida === 'un' ? 0 : 3)} {p.unidade_medida}
                   </span>
+                  <StockBar atual={p.estoque_atual} minimo={p.estoque_minimo} />
                 </td>
                 <td className="px-4 py-3 text-center">
                   {p.estoque_baixo ? (
-                    <span className="bg-red-900/50 text-red-300 text-xs px-2 py-0.5 rounded-full border border-red-700">Baixo</span>
+                    <span
+                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      style={{ background: 'var(--clr-danger-bg)', color: 'var(--clr-danger)', border: '1px solid #FCA5A5' }}
+                    >
+                      Baixo
+                    </span>
                   ) : (
-                    <span className="bg-green-900/50 text-green-300 text-xs px-2 py-0.5 rounded-full border border-green-700">OK</span>
+                    <span
+                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      style={{ background: 'var(--clr-green-lite)', color: 'var(--clr-green)', border: '1px solid var(--clr-border-2)' }}
+                    >
+                      OK
+                    </span>
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex gap-1 justify-end">
                     <button
                       onClick={() => setAjuste({ produto: p, tipo: 'entrada', quantidade: '', observacao: '' })}
-                      className="text-xs text-brand-400 hover:text-brand-300"
+                      className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors"
+                      style={{ color: 'var(--clr-green)', background: 'var(--clr-green-pale)', border: '1px solid var(--clr-border)' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-green-lite)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-green-pale)'}
                     >
                       Ajustar
                     </button>
                     <button
                       onClick={() => abrirEditar(p)}
-                      className="text-xs text-blue-400 hover:text-blue-300"
+                      className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors"
+                      style={{ color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#DBEAFE'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#EFF6FF'}
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => setConfirmDel(p)}
-                      className="text-xs text-red-400 hover:text-red-300"
+                      className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors"
+                      style={{ color: 'var(--clr-danger)', background: 'var(--clr-danger-bg)', border: '1px solid #FCA5A5' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#FEE2E2'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-danger-bg)'}
                     >
                       Remover
                     </button>
@@ -261,7 +361,7 @@ export default function EstoquePage() {
             ))}
             {(produtos || []).length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-4 py-12 text-center text-sm" style={{ color: 'var(--clr-text-muted)' }}>
                   Nenhum produto encontrado
                 </td>
               </tr>
@@ -272,17 +372,35 @@ export default function EstoquePage() {
 
       {/* Modal: Cadastrar / Editar Produto */}
       {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-lg border border-gray-700 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-bold text-white">
-                {editando ? `Editar — ${editando.nome}` : 'Novo Produto'}
-              </h2>
-              <button onClick={fecharForm} className="text-gray-400 hover:text-white text-xl">✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(25,40,25,0.55)', backdropFilter: 'blur(3px)' }}>
+          <div
+            className="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+            style={{ border: '1px solid var(--clr-border)' }}
+          >
+            <div
+              className="flex items-center justify-between px-6 py-4"
+              style={{ borderBottom: '1px solid var(--clr-border)', background: 'var(--clr-green-pale)' }}
+            >
+              <div>
+                <h2 className="font-bold text-base" style={{ color: 'var(--clr-text)' }}>
+                  {editando ? `Editar Produto` : 'Novo Produto'}
+                </h2>
+                {editando && (
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>{editando.nome}</p>
+                )}
+              </div>
+              <button
+                onClick={fecharForm}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                style={{ color: 'var(--clr-text-muted)' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-border)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+              >
+                <IconClose />
+              </button>
             </div>
 
-            <div className="space-y-4">
-              {/* Código de barras — funciona com scanner KNUP e teclado */}
+            <div className="p-6 space-y-4">
               <div>
                 <label className="label">Código de Barras</label>
                 <input
@@ -294,12 +412,11 @@ export default function EstoquePage() {
                   placeholder="Leia com o scanner ou digite manualmente"
                   autoComplete="off"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Aponte o leitor KNUP para o produto ou digite o codigo manualmente
+                <p className="text-xs mt-1" style={{ color: 'var(--clr-text-muted)' }}>
+                  Aponte o leitor para o produto ou digite o código manualmente
                 </p>
               </div>
 
-              {/* Nome */}
               <div>
                 <label className="label">Nome do Produto *</label>
                 <input
@@ -311,7 +428,6 @@ export default function EstoquePage() {
                 />
               </div>
 
-              {/* Categoria */}
               <div>
                 <label className="label">Categoria *</label>
                 <select
@@ -326,7 +442,6 @@ export default function EstoquePage() {
                 </select>
               </div>
 
-              {/* Preços */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Preço de Venda (R$) *</label>
@@ -354,7 +469,6 @@ export default function EstoquePage() {
                 </div>
               </div>
 
-              {/* Unidade e estoques */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="label">Unidade</label>
@@ -392,23 +506,25 @@ export default function EstoquePage() {
                 </div>
               </div>
 
-              {/* Margem calculada ao vivo */}
               {form.preco_venda && form.preco_custo && parseFloat(form.preco_custo) > 0 && (
-                <div className="bg-gray-700/50 rounded-lg p-3 text-sm">
-                  <span className="text-gray-400">Margem estimada: </span>
-                  <span className="text-green-400 font-bold font-mono">
+                <div
+                  className="flex items-center justify-between rounded-xl px-4 py-3"
+                  style={{ background: 'var(--clr-green-pale)', border: '1px solid var(--clr-border)' }}
+                >
+                  <span className="text-sm" style={{ color: 'var(--clr-text-muted)' }}>Margem estimada</span>
+                  <span className="font-mono font-bold text-sm" style={{ color: 'var(--clr-green)' }}>
                     {(((parseFloat(form.preco_venda) - parseFloat(form.preco_custo)) / parseFloat(form.preco_custo)) * 100).toFixed(1)}%
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3 mt-6">
-              <button onClick={fecharForm} className="btn-secondary flex-1">Cancelar</button>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={fecharForm} className="btn-bakery flex-1">Cancelar</button>
               <button
                 onClick={salvar}
                 disabled={criarM.isLoading || editarM.isLoading}
-                className="btn-primary flex-1"
+                className="btn-action flex-1"
               >
                 {criarM.isLoading || editarM.isLoading ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Produto'}
               </button>
@@ -419,14 +535,33 @@ export default function EstoquePage() {
 
       {/* Modal: Ajuste de Estoque */}
       {ajuste && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700">
-            <h2 className="text-lg font-bold text-white mb-4">
-              Ajustar Estoque — {ajuste.produto.nome}
-            </h2>
-            <div className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(25,40,25,0.55)', backdropFilter: 'blur(3px)' }}>
+          <div
+            className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+            style={{ border: '1px solid var(--clr-border)' }}
+          >
+            <div
+              className="flex items-center justify-between px-6 py-4"
+              style={{ borderBottom: '1px solid var(--clr-border)', background: 'var(--clr-green-pale)' }}
+            >
               <div>
-                <label className="label">Tipo</label>
+                <h2 className="font-bold text-base" style={{ color: 'var(--clr-text)' }}>Ajuste de Estoque</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>{ajuste.produto.nome}</p>
+              </div>
+              <button
+                onClick={() => setAjuste(null)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                style={{ color: 'var(--clr-text-muted)' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-border)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+              >
+                <IconClose />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="label">Tipo de movimentação</label>
                 <select
                   value={ajuste.tipo}
                   onChange={e => setAjuste({ ...ajuste, tipo: e.target.value })}
@@ -434,7 +569,7 @@ export default function EstoquePage() {
                 >
                   <option value="entrada">Entrada</option>
                   <option value="saida">Saída</option>
-                  <option value="ajuste">Ajuste (define saldo)</option>
+                  <option value="ajuste">Ajuste (define saldo final)</option>
                   <option value="perda">Perda</option>
                 </select>
               </div>
@@ -448,7 +583,7 @@ export default function EstoquePage() {
                   min="0.001"
                   value={ajuste.quantidade}
                   onChange={e => setAjuste({ ...ajuste, quantidade: e.target.value })}
-                  className="input text-xl font-mono text-center"
+                  className="input text-xl font-mono text-center h-14"
                   autoFocus
                 />
               </div>
@@ -463,8 +598,9 @@ export default function EstoquePage() {
                 />
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setAjuste(null)} className="btn-secondary flex-1">Cancelar</button>
+
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => setAjuste(null)} className="btn-bakery flex-1">Cancelar</button>
               <button
                 onClick={() => ajusteM.mutate({
                   produto_id: ajuste.produto.id,
@@ -473,9 +609,9 @@ export default function EstoquePage() {
                   observacao: ajuste.observacao,
                 })}
                 disabled={!ajuste.quantidade || ajusteM.isLoading}
-                className="btn-primary flex-1"
+                className="btn-action flex-1"
               >
-                {ajusteM.isLoading ? 'Salvando...' : 'Salvar Ajuste'}
+                {ajusteM.isLoading ? 'Salvando...' : 'Confirmar Ajuste'}
               </button>
             </div>
           </div>
@@ -484,21 +620,32 @@ export default function EstoquePage() {
 
       {/* Modal: Confirmar Remoção */}
       {confirmDel && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-sm border border-gray-700">
-            <div className="text-center">
-              <div className="text-4xl mb-3">⚠️</div>
-              <h2 className="text-lg font-bold text-white mb-2">Remover Produto?</h2>
-              <p className="text-gray-400 text-sm mb-6">
-                <strong className="text-white">{confirmDel.nome}</strong> será desativado e não aparecerá mais no PDV.
-              </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(25,40,25,0.55)', backdropFilter: 'blur(3px)' }}>
+          <div
+            className="bg-white w-full max-w-sm rounded-2xl p-8 shadow-2xl text-center"
+            style={{ border: '1px solid var(--clr-border)' }}
+          >
+            <div className="flex justify-center mb-4">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                style={{ background: 'var(--clr-warning-bg)' }}
+              >
+                <IconWarning />
+              </div>
             </div>
+            <h2 className="font-bold text-lg mb-2" style={{ color: 'var(--clr-text)' }}>Remover Produto?</h2>
+            <p className="text-sm mb-6" style={{ color: 'var(--clr-text-muted)' }}>
+              <strong style={{ color: 'var(--clr-text)' }}>{confirmDel.nome}</strong> será desativado e não aparecerá mais no PDV.
+            </p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDel(null)} className="btn-secondary flex-1">Cancelar</button>
+              <button onClick={() => setConfirmDel(null)} className="btn-bakery flex-1">Cancelar</button>
               <button
                 onClick={() => deletarM.mutate(confirmDel.id)}
                 disabled={deletarM.isLoading}
-                className="btn-danger flex-1"
+                className="flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition-colors"
+                style={{ background: 'var(--clr-danger)', color: '#fff', border: 'none' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#991B1B'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-danger)'}
               >
                 {deletarM.isLoading ? 'Removendo...' : 'Sim, Remover'}
               </button>
