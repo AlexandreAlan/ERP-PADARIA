@@ -34,6 +34,11 @@ build/
 *.swo
 .claude/
 
+# Arquivos de IA (NUNCA versionar)
+CLAUDE.md
+GEMINI.md
+.gemini/
+
 # OS
 .DS_Store
 Thumbs.db
