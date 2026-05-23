@@ -314,16 +314,11 @@ $batLines = @(
     "echo       ERP PADARIA - Iniciando...",
     "echo  ============================================",
     "echo.",
-    "echo  Aguardando servidor subir...",
+    "echo  Acesse: http://localhost:8000",
+    "echo  Para encerrar: feche esta janela.",
     "echo.",
-    ("start ""ERP Padaria Servidor"" """ + $uvicornExe + """ app.main:app --host 0.0.0.0 --port 8000 --workers 1"),
-    "timeout /t 5 /nobreak >nul",
-    ("start """" ""http://localhost:8000"""),
-    "echo.",
-    "echo  Sistema iniciado! Acesse: http://localhost:8000",
-    "echo  Para encerrar feche a janela do servidor.",
-    "echo.",
-    "pause"
+    "start /b powershell -WindowStyle Hidden -Command ""Start-Sleep 6; Start-Process 'http://localhost:8000'""",
+    ("""" + $uvicornExe + """ app.main:app --host 0.0.0.0 --port 8000 --workers 1")
 )
 [System.IO.File]::WriteAllLines($startBat, $batLines, [System.Text.Encoding]::ASCII)
 Write-OK "Script: $startBat"
