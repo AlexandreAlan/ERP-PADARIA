@@ -9,7 +9,6 @@ interface Props { children: React.ReactNode }
 
 export default function SessaoGuard({ children }: Props) {
   const [valorAbertura, setValorAbertura] = useState('0.00')
-  const [caixaId, setCaixaId]             = useState<number | null>(null)
   const { sessaoId, setSessaoId }         = usePDVStore()
 
   const { data: sessaoAtiva, isLoading: checkingSession } = useQuery(
@@ -21,11 +20,13 @@ export default function SessaoGuard({ children }: Props) {
     }
   )
 
+  // Busca caixas e usa o primeiro automaticamente
   const { data: caixas } = useQuery(
     'caixas',
     () => api.get('/caixa/caixas').then(r => r.data),
     { enabled: !sessaoAtiva && !checkingSession }
   )
+  const caixaAuto = caixas?.[0] ?? null
 
   const abrirCaixaMutation = useMutation(
     (payload: any) => api.post('/caixa/abrir', payload).then(r => r.data),
@@ -71,23 +72,21 @@ export default function SessaoGuard({ children }: Props) {
             <p className="text-sm mt-1" style={{ color: 'var(--clr-text-muted)' }}>
               Informe o fundo de caixa para começar a vender
             </p>
+            {/* Nome do caixa automático */}
+            {caixaAuto && (
+              <div
+                className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-xs font-semibold"
+                style={{ background: 'var(--clr-green-pale)', color: 'var(--clr-green)', border: '1px solid var(--clr-border-2)' }}
+              >
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 13l4 4L19 7"/>
+                </svg>
+                {caixaAuto.nome}
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
-            <div>
-              <label className="label">Caixa</label>
-              <select
-                value={caixaId || ''}
-                onChange={e => setCaixaId(Number(e.target.value))}
-                className="input"
-              >
-                <option value="">Selecione o caixa...</option>
-                {caixas?.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
-                ))}
-              </select>
-            </div>
-
             <div>
               <label className="label">Fundo de caixa (R$)</label>
               <input
@@ -104,13 +103,13 @@ export default function SessaoGuard({ children }: Props) {
 
             <button
               onClick={() => {
-                if (!caixaId) return toast.error('Selecione um caixa')
+                if (!caixaAuto) return toast.error('Nenhum caixa disponível')
                 abrirCaixaMutation.mutate({
-                  caixa_id: caixaId,
+                  caixa_id: caixaAuto.id,
                   valor_abertura: parseFloat(valorAbertura) || 0,
                 })
               }}
-              disabled={abrirCaixaMutation.isLoading || !caixaId}
+              disabled={abrirCaixaMutation.isLoading || !caixaAuto}
               className="btn-action w-full py-3 text-base"
             >
               {abrirCaixaMutation.isLoading ? 'Abrindo...' : 'Abrir Caixa'}

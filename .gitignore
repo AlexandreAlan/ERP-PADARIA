@@ -43,7 +43,7 @@ GEMINI.md
 .DS_Store
 Thumbs.db
 
-# Uploads
+# Uploads gerados em runtime
 uploads/
 
 # Docker volumes
@@ -53,3 +53,17 @@ database/data/
 .pytest_cache/
 htmlcov/
 .coverage
+
+# WhatsApp session (dados sensíveis de autenticação)
+whatsapp-service/.wwebjs_auth/
+whatsapp-service/.wwebjs_cache/
+
+# Ícone e logo locais (cada cliente tem o seu)
+logo_empresa.png
+logo_empresa.ico
+
+# Scripts de configuração local
+CONFIGURAR_LOGO.bat
+configurar_logo.py
+ATUALIZAR_ATALHO.bat
+COMPILAR_FRONTEND.bat

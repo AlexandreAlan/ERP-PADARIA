@@ -10,6 +10,12 @@ import CartPanel from './CartPanel'
 import PaymentModal from './PaymentModal'
 import SessaoGuard from './SessaoGuard'
 
+const IconFecharCaixa = () => (
+  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+  </svg>
+)
+
 const IconSearch = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -115,15 +121,45 @@ function NumPad({ value, onChange }: { value: string; onChange: (v: string) => v
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function PDVPage() {
-  const [showPayment, setShowPayment]   = useState(false)
-  const [searchTerm, setSearchTerm]     = useState('')
-  const [categoriaSel, setCategoriaSel] = useState<number | null>(null)
-  const [qtyStr, setQtyStr]             = useState('1')
-  const lastQtyKeyTime                  = useRef(0)
+  const [showPayment, setShowPayment]         = useState(false)
+  const [showFecharCaixa, setShowFecharCaixa] = useState(false)
+  const [valorFechamento, setValorFechamento] = useState('')
+  const [searchTerm, setSearchTerm]           = useState('')
+  const [categoriaSel, setCategoriaSel]       = useState<number | null>(null)
+  const [qtyStr, setQtyStr]                   = useState('1')
+  const lastQtyKeyTime                        = useRef(0)
 
   const { user }    = useAuthStore()
   const store       = usePDVStore()
   const queryClient = useQueryClient()
+
+  const { data: sessaoAtiva } = useQuery(
+    'sessao-ativa',
+    () => api.get('/caixa/sessao-ativa').then(r => r.data),
+    { enabled: showFecharCaixa }
+  )
+
+  const saldoEsperado = sessaoAtiva
+    ? parseFloat(sessaoAtiva.valor_abertura) + parseFloat(sessaoAtiva.total_vendas)
+      - parseFloat(sessaoAtiva.total_sangrias) + parseFloat(sessaoAtiva.total_suprimentos)
+    : 0
+
+  const fecharCaixaMutation = useMutation(
+    (payload: any) => api.post(`/caixa/${store.sessaoId}/fechar`, payload).then(r => r.data),
+    {
+      onSuccess: (data) => {
+        store.setSessaoId(null)
+        store.clearCart()
+        setShowFecharCaixa(false)
+        setValorFechamento('')
+        queryClient.invalidateQueries('sessao-ativa')
+        toast.success(`Caixa fechado. Diferença: ${formatBRL(data.sessao?.diferenca || 0)}`, { duration: 5000 })
+      },
+      onError: (err: any) => {
+        toast.error(err.response?.data?.detail || 'Erro ao fechar caixa')
+      },
+    }
+  )
 
   // F10 to pay + NumPad keyboard support
   useEffect(() => {
@@ -415,14 +451,36 @@ export default function PDVPage() {
                 Pedido {user && <span style={{ color: 'rgba(180,220,180,0.5)', fontWeight: 400 }}>· {user.nome}</span>}
               </h2>
             </div>
-            {hasItems && (
-              <span
-                className="text-xs font-bold px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(82,183,136,0.2)', color: 'var(--clr-accent)', border: '1px solid rgba(82,183,136,0.25)' }}
+            <div className="flex items-center gap-2">
+              {hasItems && (
+                <span
+                  className="text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(82,183,136,0.2)', color: 'var(--clr-accent)', border: '1px solid rgba(82,183,136,0.25)' }}
+                >
+                  {store.cart.length} {store.cart.length === 1 ? 'item' : 'itens'}
+                </span>
+              )}
+              {/* Botão Fechar Caixa */}
+              <button
+                onClick={() => setShowFecharCaixa(true)}
+                title="Fechar Caixa"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+                style={{ background: 'rgba(239,68,68,0.15)', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.25)' }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.background = 'rgba(239,68,68,0.28)'
+                  el.style.color = '#FEE2E2'
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.background = 'rgba(239,68,68,0.15)'
+                  el.style.color = '#FCA5A5'
+                }}
               >
-                {store.cart.length} {store.cart.length === 1 ? 'item' : 'itens'}
-              </span>
-            )}
+                <IconFecharCaixa />
+                Fechar Caixa
+              </button>
+            </div>
           </div>
 
           {/* Itens */}
@@ -496,6 +554,70 @@ export default function PDVPage() {
           onCancel={() => setShowPayment(false)}
           isLoading={createVendaMutation.isLoading}
         />
+      )}
+
+      {/* Modal Fechar Caixa */}
+      {showFecharCaixa && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(25,40,25,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid var(--clr-border)' }}>
+            {/* Header */}
+            <div className="px-6 py-4 flex items-center justify-between" style={{ background: '#FEF2F2', borderBottom: '1px solid #FECACA' }}>
+              <div>
+                <h2 className="font-bold text-base" style={{ color: '#991B1B' }}>Fechar Caixa</h2>
+                <p className="text-xs mt-0.5" style={{ color: '#B91C1C' }}>Informe o valor físico contado em caixa</p>
+              </div>
+              <button
+                onClick={() => { setShowFecharCaixa(false); setValorFechamento('') }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ color: '#B91C1C' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#FECACA'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              <div
+                className="flex items-center justify-between px-4 py-3 rounded-xl text-sm"
+                style={{ background: 'var(--clr-green-pale)', border: '1px solid var(--clr-border-2)' }}
+              >
+                <span style={{ color: 'var(--clr-text-muted)' }}>Saldo esperado</span>
+                <span className="font-mono font-bold" style={{ color: 'var(--clr-green)' }}>{formatBRL(saldoEsperado)}</span>
+              </div>
+              <div>
+                <label className="label">Valor contado em espécie (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={valorFechamento}
+                  onChange={e => setValorFechamento(e.target.value)}
+                  className="input h-14 text-2xl font-mono text-center"
+                  placeholder="0.00"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => { setShowFecharCaixa(false); setValorFechamento('') }}
+                  className="btn-bakery flex-1"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => fecharCaixaMutation.mutate({ valor_fechamento: parseFloat(valorFechamento) || 0 })}
+                  disabled={fecharCaixaMutation.isLoading}
+                  className="btn-danger flex-1"
+                >
+                  {fecharCaixaMutation.isLoading ? 'Fechando...' : 'Confirmar Fechamento'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </SessaoGuard>
   )

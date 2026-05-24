@@ -173,6 +173,19 @@ export default function Sidebar() {
                   >
                     {item.icon}
                     <span>{item.label}</span>
+                    {item.to === '/whatsapp' && (
+                      <span
+                        className="ml-auto text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-full shrink-0"
+                        style={{
+                          background: '#EF4444',
+                          color: '#fff',
+                          boxShadow: '0 0 6px rgba(239,68,68,0.6)',
+                          letterSpacing: '0.08em',
+                        }}
+                      >
+                        BETA
+                      </span>
+                    )}
                   </NavLink>
                 ))}
               </div>
