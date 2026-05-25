@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # Database
     db_host: str = "localhost"
-    db_port: int = 3306
+    db_port: int = 5432
     db_name: str = "erp_padaria"
     db_user: str = "root"
     db_password: str = ""
@@ -36,9 +36,8 @@ class Settings(BaseSettings):
         if self.db_host == "sqlite":
             return f"sqlite+aiosqlite:///./{self.db_name}.db"
         return (
-            f"mysql+aiomysql://{self.db_user}:{self.db_password}"
+            f"postgresql+asyncpg://{self.db_user}:{self.db_password}"
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
-            f"?charset=utf8mb4"
         )
 
     # JWT

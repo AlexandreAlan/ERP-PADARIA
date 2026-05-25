@@ -18,7 +18,7 @@ class Venda(Base, TimestampMixin):
     sessao_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("sessoes_caixa.id"), nullable=False)
     usuario_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("usuarios.id"), nullable=False)
     status: Mapped[str] = mapped_column(
-        SAEnum("rascunho", "concluida", "cancelada"),
+        SAEnum("rascunho", "concluida", "cancelada", native_enum=False),
         nullable=False,
         default="rascunho",
     )
@@ -66,13 +66,14 @@ class Pagamento(Base):
     forma: Mapped[str] = mapped_column(
         SAEnum(
             "dinheiro", "cartao_credito", "cartao_debito", "pix", "vale",
+            native_enum=False,
         ),
         nullable=False,
     )
     valor: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     nsu: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     status: Mapped[str] = mapped_column(
-        SAEnum("pendente", "aprovado", "recusado"),
+        SAEnum("pendente", "aprovado", "recusado", native_enum=False),
         nullable=False,
         default="aprovado",
     )

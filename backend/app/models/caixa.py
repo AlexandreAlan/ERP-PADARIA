@@ -28,7 +28,7 @@ class SessaoCaixa(Base):
     caixa_id: Mapped[int] = mapped_column(Integer, ForeignKey("caixas.id"), nullable=False)
     usuario_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("usuarios.id"), nullable=False)
     status: Mapped[str] = mapped_column(
-        SAEnum("aberto", "fechado"),
+        SAEnum("aberto", "fechado", native_enum=False),
         nullable=False,
         default="aberto",
     )
@@ -55,7 +55,7 @@ class MovimentacaoCaixa(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     sessao_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("sessoes_caixa.id"), nullable=False)
     tipo: Mapped[str] = mapped_column(
-        SAEnum("sangria", "suprimento"),
+        SAEnum("sangria", "suprimento", native_enum=False),
         nullable=False,
     )
     valor: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)

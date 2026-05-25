@@ -12,6 +12,10 @@ __pycache__/
 .env
 !.env.example
 
+# Envs por cliente (multi-tenant) — segredos. Mantém só o template.
+deploy/clients/*.env
+!deploy/clients/example.env
+
 # Banco de dados
 *.db
 *.sqlite

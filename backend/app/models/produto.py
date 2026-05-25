@@ -48,7 +48,7 @@ class Produto(Base, TimestampMixin, SoftDeleteMixin):
         Integer, ForeignKey("fornecedores.id"), nullable=True
     )
     unidade_medida: Mapped[str] = mapped_column(
-        SAEnum("un", "kg", "g", "l", "ml", "pct"),
+        SAEnum("un", "kg", "g", "l", "ml", "pct", native_enum=False),
         nullable=False,
         default="un",
     )

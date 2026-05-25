@@ -14,7 +14,7 @@ class Compra(Base, TimestampMixin):
     fornecedor_id: Mapped[int] = mapped_column(Integer, ForeignKey("fornecedores.id"), nullable=False)
     usuario_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("usuarios.id"), nullable=False)
     status: Mapped[str] = mapped_column(
-        SAEnum("rascunho", "confirmado", "recebido", "cancelado"),
+        SAEnum("rascunho", "confirmado", "recebido", "cancelado", native_enum=False),
         nullable=False,
         default="rascunho",
     )

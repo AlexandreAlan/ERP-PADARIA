@@ -9,7 +9,6 @@ import CaixaPage from '@/pages/Caixa/CaixaPage'
 import RelatoriosPage from '@/pages/Relatorios/RelatoriosPage'
 import AuditoriaPage from '@/pages/Auditoria/AuditoriaPage'
 import ConfiguracoesPage from '@/pages/Configuracoes/ConfiguracoesPage'
-import WhatsappPage from '@/pages/Whatsapp/WhatsappPage'
 
 export default function App() {
   return (
@@ -25,7 +24,6 @@ export default function App() {
           <Route path="/relatorios" element={<RelatoriosPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/configuracoes" element={<ConfiguracoesPage />} />
-          <Route path="/whatsapp" element={<WhatsappPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

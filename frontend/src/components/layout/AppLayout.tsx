@@ -13,7 +13,6 @@ const PAGE_NAMES: Record<string, string> = {
   '/relatorios':    'Relatórios',
   '/auditoria':     'Auditoria',
   '/configuracoes': 'Configurações',
-  '/whatsapp':      'WhatsApp',
 }
 
 function TopBar() {

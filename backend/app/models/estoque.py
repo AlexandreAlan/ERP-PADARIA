@@ -12,7 +12,7 @@ class MovimentacaoEstoque(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     produto_id: Mapped[int] = mapped_column(Integer, ForeignKey("produtos.id"), nullable=False)
     tipo: Mapped[str] = mapped_column(
-        SAEnum("entrada", "saida", "ajuste", "perda", "devolucao", "venda"),
+        SAEnum("entrada", "saida", "ajuste", "perda", "devolucao", "venda", native_enum=False),
         nullable=False,
     )
     quantidade: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
@@ -21,7 +21,7 @@ class MovimentacaoEstoque(Base):
     custo_unit: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=True)
     referencia_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     referencia_tipo: Mapped[Optional[str]] = mapped_column(
-        SAEnum("venda", "compra", "ajuste_manual"),
+        SAEnum("venda", "compra", "ajuste_manual", native_enum=False),
         nullable=True,
     )
     usuario_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("usuarios.id"), nullable=False)

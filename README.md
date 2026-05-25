@@ -1,7 +1,7 @@
 # ERP Padaria — Sistema de Gestão e PDV
 
 Sistema completo de frente de caixa (PDV) e gestão para padarias.  
-**Stack:** FastAPI · React 18 · TypeScript · SQLite (padrão) / MySQL (produção)
+**Stack:** FastAPI · React 18 · TypeScript · SQLite (dev) / PostgreSQL (produção, em Docker)
 
 ---
 
@@ -19,6 +19,7 @@ Sistema completo de frente de caixa (PDV) e gestão para padarias.
 10. [Impressora Térmica ESC/POS](#10-impressora-térmica-escpos)
 11. [Segurança em Produção](#11-segurança-em-produção)
 12. [Estrutura do Projeto](#12-estrutura-do-projeto)
+13. [Deploy em produção (Docker · multi-tenant)](#13-deploy-em-produção-docker--multi-tenant)
 
 ---
 
@@ -174,7 +175,7 @@ Caso os scripts `.bat` não funcionem, siga este roteiro manualmente.
 ### Backend (FastAPI)
 
 ```bat
-cd erp_padaria\backend
+cd backend
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
@@ -199,7 +200,7 @@ venv\Scripts\uvicorn.exe app.main:app --host 0.0.0.0 --port 8000 --reload
 Abra outro terminal:
 
 ```bat
-cd erp_padaria\frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -207,7 +208,7 @@ npm run dev
 ### Recriar o banco do zero
 
 ```bat
-cd erp_padaria\backend
+cd backend
 venv\Scripts\python.exe seed_dev.py
 ```
 
@@ -305,13 +306,13 @@ APP_HOST=0.0.0.0
 APP_PORT=8000
 
 # ── Banco de dados ───────────────────────────────
-# SQLite (padrão, sem instalação extra):
+# SQLite (dev, sem instalação extra):
 DB_HOST=sqlite
 DB_NAME=padaria             # cria o arquivo padaria.db
 
-# MySQL (produção recomendada):
+# PostgreSQL (produção):
 # DB_HOST=localhost
-# DB_PORT=3306
+# DB_PORT=5432
 # DB_NAME=erp_padaria
 # DB_USER=padaria_user
 # DB_PASSWORD=senha_forte_aqui
@@ -360,33 +361,32 @@ backend\padaria.db
 
 Ideal para uso em padarias com um único computador.
 
-### MySQL (recomendado para múltiplos computadores)
+### PostgreSQL (produção — recomendado para múltiplos computadores)
 
-1. Instale o MySQL 8.0+
-2. Crie o banco e o usuário:
-
-```sql
-CREATE DATABASE erp_padaria CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'padaria_user'@'localhost' IDENTIFIED BY 'senha_forte';
-GRANT ALL PRIVILEGES ON erp_padaria.* TO 'padaria_user'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-3. Configure o `backend\.env`:
+Em produção o banco roda em **container Docker** (ver seção [Deploy em produção](#13-deploy-em-produção-docker--multi-tenant)). Para apontar para um PostgreSQL próprio, configure o `backend/.env`:
 
 ```env
 DB_HOST=localhost
-DB_PORT=3306
+DB_PORT=5432
 DB_NAME=erp_padaria
 DB_USER=padaria_user
 DB_PASSWORD=senha_forte
 ```
 
-4. Execute o seed para criar as tabelas e dados iniciais:
+E crie o banco/usuário no Postgres:
 
-```bat
-cd erp_padaria\backend
-venv\Scripts\python.exe seed_dev.py
+```sql
+CREATE DATABASE erp_padaria;
+CREATE USER padaria_user WITH PASSWORD 'senha_forte';
+GRANT ALL PRIVILEGES ON DATABASE erp_padaria TO padaria_user;
+```
+
+Para inicializar **com dados de exemplo** (dev/demo), use `seed_dev.py`. Para um banco **limpo** (cliente real — só admin, empresa e caixa), use `init_db.py`:
+
+```bash
+cd backend
+python init_db.py        # init limpo e idempotente
+# ou: python seed_dev.py # demo (ATENÇÃO: apaga tudo e popula dados fictícios)
 ```
 
 ---
@@ -468,8 +468,8 @@ JWT_SECRET_KEY=resultado_aqui
 - [ ] `APP_DEBUG=false` — desativa o Swagger público
 - [ ] `JWT_SECRET_KEY` com pelo menos 64 caracteres aleatórios
 - [ ] `CORS_ORIGINS` apontando apenas para o seu domínio/IP
-- [ ] Banco MySQL com usuário de permissões limitadas (não use `root`)
-- [ ] Faça backup diário do arquivo `padaria.db` (SQLite) ou do MySQL
+- [ ] Banco PostgreSQL com usuário de permissões limitadas (não use `postgres`/superusuário)
+- [ ] Faça backup diário do arquivo `padaria.db` (SQLite) ou do volume do PostgreSQL
 - [ ] Nunca versione o arquivo `.env`
 
 ---
@@ -479,32 +479,38 @@ JWT_SECRET_KEY=resultado_aqui
 ```
 ERP-PADARIA/
 │
-├── erp_padaria/                    # Sistema novo (FastAPI + React)
-│   ├── backend/
-│   │   ├── app/
-│   │   │   ├── models/             # Modelos SQLAlchemy (tabelas do banco)
-│   │   │   ├── routers/            # Endpoints da API REST
-│   │   │   ├── services/           # Lógica de negócio
-│   │   │   ├── schemas/            # Validação com Pydantic
-│   │   │   ├── dependencies/       # Autenticação e guards de perfil
-│   │   │   └── main.py             # Ponto de entrada da API
-│   │   ├── seed_dev.py             # Cria e popula o banco de dados
-│   │   ├── requirements.txt        # Dependências Python
-│   │   └── .env                    # Configurações (NÃO versionar)
-│   │
-│   └── frontend/
-│       └── src/
-│           ├── pages/              # PDV, Estoque, Caixa, Dashboard...
-│           ├── store/              # Estado global (Zustand)
-│           ├── hooks/              # Hooks reutilizáveis
-│           └── config/             # Axios com interceptor de autenticação
+├── backend/                        # API FastAPI (assíncrona, SQLAlchemy 2.0)
+│   ├── app/
+│   │   ├── models/                 # Modelos SQLAlchemy (tabelas do banco)
+│   │   ├── routers/                # Endpoints da API REST
+│   │   ├── services/               # Lógica de negócio
+│   │   ├── schemas/                # Validação com Pydantic
+│   │   ├── dependencies/           # Autenticação e guards de perfil
+│   │   └── main.py                 # Ponto de entrada da API
+│   ├── seed_dev.py                 # Cria e popula o banco COM dados de exemplo
+│   ├── init_db.py                  # Init LIMPO (produção/cliente real)
+│   ├── Dockerfile                  # Imagem de produção
+│   ├── requirements.txt            # Dependências Python
+│   └── .env                        # Configurações (NÃO versionar)
 │
-├── INSTALAR_SISTEMA.bat            # Instalador automático (nova máquina)
-├── erp-padaria.bat                 # Inicia o sistema em modo desenvolvimento
+├── frontend/                       # SPA React 18 + Vite + TypeScript + Tailwind
+│   └── src/
+│       ├── pages/                  # PDV, Estoque, Caixa, Dashboard...
+│       ├── store/                  # Estado global (Zustand)
+│       ├── hooks/                  # Hooks reutilizáveis
+│       └── config/                 # Axios com interceptor de autenticação
+│
+├── deploy/                         # Infra de produção (multi-tenant)
+│   ├── new-client.sh               # Provisiona uma cópia isolada de cliente
+│   ├── clients/                    # 1 .env por cliente (gitignored) + example.env
+│   └── nginx/                      # Confs de Nginx versionadas
+│
+├── docker-compose.yml              # Stack de produção parametrizada (PostgreSQL + backend)
+├── INSTALAR_SISTEMA.bat            # Instalador automático Windows (nova máquina)
+├── erp-padaria.bat                 # Inicia o sistema em modo desenvolvimento (Windows)
 ├── setup.ps1                       # Script PowerShell chamado pelo instalador
 │
-├── app.py                          # Sistema legado (Flask) — não é mais desenvolvido
-└── docker-compose.yml              # Alternativa com Docker (MySQL + backend + frontend)
+└── app.py                          # Sistema legado (Flask) — não é mais desenvolvido
 ```
 
 ### Arquivos importantes para o dia a dia
@@ -516,6 +522,48 @@ ERP-PADARIA/
 | `C:\Padaria\Iniciar_Padaria.bat` | Iniciar o sistema em produção (criado pelo instalador) |
 | `backend\.env`           | Configurações do sistema (banco, impressora, padaria)      |
 | `backend\seed_dev.py`    | Recriar o banco de dados com dados de exemplo              |
+
+---
+
+## 13. Deploy em produção (Docker · multi-tenant)
+
+Em produção o sistema roda em **Docker** (PostgreSQL + backend FastAPI) atrás do **Nginx** com HTTPS (Let's Encrypt). O frontend é compilado (`frontend/dist`) e servido pelo Nginx.
+
+### Modelo multi-tenant: cópia isolada por cliente
+
+Um único código e um único `docker-compose.yml` **parametrizado**. Cada cliente roda como um **projeto Docker Compose separado**, com banco, volumes, rede, container e porta próprios — **dados 100% isolados**. O `frontend/dist` é compartilhado; o nome/identidade da padaria (logo, CNPJ, etc.) vem em runtime de `GET /api/configuracoes/empresa`, que nasce da variável `PADARIA_NOME`.
+
+Os defaults do compose (`${VAR:-padrão}`) reproduzem a instância base, então `docker compose up -d` puro sobe a primeira instância sem precisar de nada extra.
+
+### Provisionar um novo cliente (1 comando)
+
+```bash
+cd /caminho/do/ERP-PADARIA
+
+# 1. Crie o arquivo de ambiente do cliente (gere os segredos):
+cp deploy/clients/example.env deploy/clients/<slug>.env
+#   preencha <slug>, domínio, porta livre, DB_*, JWT_SECRET_KEY, PADARIA_NOME, ADMIN_*
+
+# 2. Provisione (sobe a stack isolada + init limpo + Nginx + HTTPS):
+./deploy/new-client.sh <slug> <dominio>
+```
+
+O `deploy/new-client.sh` sobe a stack (`docker compose -p erp-padaria-<slug> --env-file deploy/clients/<slug>.env up -d --build`), roda o `init_db.py` (admin + empresa + caixa, **sem dados fictícios**), gera a conf do Nginx e emite o certificado.
+
+### Operação / re-deploy
+
+```bash
+# Frontend (compartilhado por todos os clientes):
+cd frontend && npm run build && cd ..
+
+# Backend de um cliente específico (ex.: slug "kero"):
+docker compose -p erp-padaria-kero --env-file deploy/clients/kero.env up -d --build
+
+# Logs:
+docker compose -p erp-padaria-kero --env-file deploy/clients/kero.env logs -f
+```
+
+> `seed_dev.py` popula dados de exemplo e **apaga o banco** (uso dev/demo). Em banco de cliente real use sempre `init_db.py` (limpo e idempotente).
 
 ---
 
@@ -534,7 +582,7 @@ Para encerrar, feche as janelas do terminal com título "Backend" e "Frontend".
 
 ### Banco de dados corrompido ou para reiniciar do zero
 ```bat
-cd erp_padaria\backend
+cd backend
 del padaria.db
 venv\Scripts\python.exe seed_dev.py
 ```
@@ -545,6 +593,6 @@ Execute o `.bat` com botão direito → **Executar como administrador**.
 ### Erro "MissingGreenlet" ou "greenlet" no backend
 Reinstale as dependências Python:
 ```bat
-cd erp_padaria\backend
+cd backend
 venv\Scripts\pip.exe install -r requirements.txt --force-reinstall
 ```

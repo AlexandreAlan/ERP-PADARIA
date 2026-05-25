@@ -13,7 +13,7 @@ class LogAuditoria(Base):
     entidade: Mapped[str] = mapped_column(String(50), nullable=False)
     entidade_id: Mapped[str] = mapped_column(String(50), nullable=False)
     acao: Mapped[str] = mapped_column(
-        SAEnum("criar", "editar", "deletar", "login", "logout", "cancelar", "ajuste"),
+        SAEnum("criar", "editar", "deletar", "login", "logout", "cancelar", "ajuste", native_enum=False),
         nullable=False,
     )
     dados_anteriores: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
