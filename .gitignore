@@ -58,10 +58,6 @@ database/data/
 htmlcov/
 .coverage
 
-# WhatsApp session (dados sensíveis de autenticação)
-whatsapp-service/.wwebjs_auth/
-whatsapp-service/.wwebjs_cache/
-
 # Ícone e logo locais (cada cliente tem o seu)
 logo_empresa.png
 logo_empresa.ico

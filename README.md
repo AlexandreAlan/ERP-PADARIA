@@ -509,8 +509,7 @@ ERP-PADARIA/
 ├── INSTALAR_SISTEMA.bat            # Instalador automático Windows (nova máquina)
 ├── erp-padaria.bat                 # Inicia o sistema em modo desenvolvimento (Windows)
 ├── setup.ps1                       # Script PowerShell chamado pelo instalador
-│
-└── app.py                          # Sistema legado (Flask) — não é mais desenvolvido
+└── loading.py                      # Splash de carregamento (launcher Windows)
 ```
 
 ### Arquivos importantes para o dia a dia

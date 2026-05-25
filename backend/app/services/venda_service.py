@@ -2,8 +2,6 @@ from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 import uuid
-import httpx
-import asyncio
 
 from fastapi import HTTPException, status
 from sqlalchemy import select, update
@@ -22,39 +20,6 @@ settings = get_settings()
 
 TWO = Decimal("0.01")
 
-async def notify_whatsapp_receipt(venda_id: int, db: AsyncSession, phone: str):
-    """Envia o recibo via WhatsApp em segundo plano."""
-    try:
-        result = await db.execute(
-            select(Venda).where(Venda.id == venda_id)
-        )
-        venda = result.scalar_one_or_none()
-        if not venda: return
-
-        # Simplifica dados para o serviço de WhatsApp
-        payload = {
-            "to": phone,
-            "venda": {
-                "id": venda.id,
-                "total": str(venda.total),
-                "subtotal": str(venda.subtotal),
-                "desconto_valor": str(venda.desconto_valor),
-                "created_at": venda.created_at.isoformat(),
-                "itens": [
-                    {
-                        "produto_nome": item.produto.nome if item.produto else "Produto",
-                        "quantidade": str(item.quantidade),
-                        "preco_unit": str(item.preco_unit),
-                        "total_item": str(item.total_item)
-                    } for item in venda.itens
-                ]
-            }
-        }
-        
-        async with httpx.AsyncClient() as client:
-            await client.post(f"{settings.whatsapp_api_url}/send-receipt", json=payload, timeout=5.0)
-    except Exception as e:
-        print(f"[WA] Erro ao disparar notificação: {e}")
 
 async def criar_venda(
     payload: VendaCreate,

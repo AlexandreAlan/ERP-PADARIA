@@ -12,5 +12,4 @@ from app.routers import (
     relatorios,
     auditoria,
     configuracoes,
-    whatsapp,
 )
