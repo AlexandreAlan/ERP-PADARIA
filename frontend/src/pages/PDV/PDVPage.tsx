@@ -116,14 +116,14 @@ export default function PDVPage() {
 
           {/* Grid de Produtos - Cards Grandes no Mobile */}
           <div className="flex-1 overflow-y-auto p-3 lg:p-6">
-             <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4">
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 lg:gap-4">
                 {filteredProdutos.map((p: any) => (
-                  <button 
+                  <button
                     key={p.id}
                     onClick={() => addProduto(p)}
-                    className="bg-white p-3 rounded-3xl border border-gray-100 shadow-sm active:scale-95 transition-all text-left flex flex-col justify-between min-h-[140px] lg:min-h-[160px]"
+                    className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm active:scale-95 transition-all text-left flex flex-col justify-between min-h-[160px] lg:min-h-[180px]"
                   >
-                    <span className="text-sm font-bold text-gray-700 line-clamp-2 leading-tight mb-2">{p.nome}</span>
+                    <span className="text-sm font-bold text-gray-700 line-clamp-4 leading-snug mb-2">{p.nome}</span>
                     <div>
                       <div className="text-green-700 font-mono font-extrabold text-lg">{formatBRL(p.preco_venda)}</div>
                       <div className="text-[10px] text-gray-400 uppercase font-bold mt-1">{p.unidade_medida}</div>
