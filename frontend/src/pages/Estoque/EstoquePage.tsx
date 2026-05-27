@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import toast from 'react-hot-toast'
 import { api } from '@/config/api'
@@ -23,9 +23,64 @@ interface Produto {
 interface Categoria {
   id: number
   nome: string
+  descricao?: string | null
+  ativo?: boolean
+  parent_id?: number | null
 }
 
-const UNIDADES = ['un', 'kg', 'g', 'l', 'ml', 'pct']
+interface CategoriaNode extends Categoria {
+  filhos: CategoriaNode[]
+  nivel: number
+  caminho: string
+}
+
+function buildTree(flat: Categoria[]): CategoriaNode[] {
+  const byId = new Map<number, CategoriaNode>()
+  flat.forEach(c => byId.set(c.id, { ...c, filhos: [], nivel: 0, caminho: c.nome }))
+
+  // 1ª passagem: monta links pai-filho sem calcular nível
+  const roots: CategoriaNode[] = []
+  byId.forEach(node => {
+    const pid = node.parent_id
+    if (pid && byId.has(pid)) {
+      byId.get(pid)!.filhos.push(node)
+    } else {
+      roots.push(node)
+    }
+  })
+
+  // 2ª passagem: BFS a partir das raízes garante nível e caminho corretos
+  // independente da ordem de chegada da API
+  const fila: { node: CategoriaNode; nivel: number; caminho: string }[] =
+    roots.map(r => ({ node: r, nivel: 0, caminho: r.nome }))
+  while (fila.length) {
+    const { node, nivel, caminho } = fila.shift()!
+    node.nivel  = nivel
+    node.caminho = caminho
+    node.filhos.forEach(filho =>
+      fila.push({ node: filho, nivel: nivel + 1, caminho: `${caminho} › ${filho.nome}` })
+    )
+  }
+
+  const sortRec = (arr: CategoriaNode[]) => {
+    arr.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    arr.forEach(n => sortRec(n.filhos))
+  }
+  sortRec(roots)
+  return roots
+}
+
+function flattenTree(roots: CategoriaNode[]): CategoriaNode[] {
+  const out: CategoriaNode[] = []
+  const walk = (n: CategoriaNode) => { out.push(n); n.filhos.forEach(walk) }
+  roots.forEach(walk)
+  return out
+}
+
+const UNIDADES = ['un', 'kg']
+
+// Normalizes BR decimal input ("5,0" → 5, "5.000" → 5, "2,5" → 2.5)
+const parseQtd = (v: string) => parseFloat(v.replace(',', '.').replace(/\.(?=.*\.)/g, '')) || 0
 
 const emptyForm = {
   nome: '',
@@ -92,6 +147,13 @@ export default function EstoquePage() {
   const [editando, setEditando]     = useState<Produto | null>(null)
   const [form, setForm]             = useState({ ...emptyForm })
   const [confirmDel, setConfirmDel] = useState<Produto | null>(null)
+  const [showCategorias, setShowCategorias] = useState(false)
+  const [novaCategoria, setNovaCategoria]   = useState('')
+  const [novoParentId, setNovoParentId]     = useState<string>('')
+  const [confirmDelCat, setConfirmDelCat]   = useState<Categoria | null>(null)
+  const [movendoCat, setMovendoCat]         = useState<number | null>(null)
+  const [editandoCat, setEditandoCat]       = useState<number | null>(null)
+  const [editNomeCat, setEditNomeCat]       = useState('')
   const barcodeInputRef             = useRef<HTMLInputElement>(null)
   const queryClient                 = useQueryClient()
 
@@ -101,10 +163,63 @@ export default function EstoquePage() {
     { staleTime: 10_000 }
   )
 
-  const { data: categorias } = useQuery(
+  const { data: categorias } = useQuery<Categoria[]>(
     'categorias',
-    () => api.get('/produtos/categorias/all').then(r => r.data),
+    () => api.get('/categorias').then(r => r.data),
     { staleTime: 60_000 }
+  )
+
+  const criarCategoriaM = useMutation(
+    (payload: { nome: string; parent_id: number | null }) =>
+      api.post('/categorias', payload).then(r => r.data),
+    {
+      onSuccess: () => {
+        toast.success('Categoria criada!')
+        queryClient.invalidateQueries('categorias')
+        setNovaCategoria('')
+        // mantém novoParentId pra criar várias subcategorias do mesmo pai em lote
+      },
+      onError: (e: any) => { toast.error(e.response?.data?.detail || 'Erro ao criar categoria') },
+    }
+  )
+
+  const renomearCategoriaM = useMutation(
+    ({ id, nome }: { id: number; nome: string }) =>
+      api.patch(`/categorias/${id}`, { nome }).then(r => r.data),
+    {
+      onSuccess: () => {
+        toast.success('Nome atualizado')
+        queryClient.invalidateQueries('categorias')
+        setEditandoCat(null)
+      },
+      onError: (e: any) => { toast.error(e.response?.data?.detail || 'Erro ao renomear') },
+    }
+  )
+
+  const moverCategoriaM = useMutation(
+    ({ id, parent_id }: { id: number; parent_id: number | null }) =>
+      api.patch(`/categorias/${id}`, { parent_id }).then(r => r.data),
+    {
+      onSuccess: () => {
+        toast.success('Hierarquia atualizada')
+        queryClient.invalidateQueries('categorias')
+        setMovendoCat(null)
+      },
+      onError: (e: any) => { toast.error(e.response?.data?.detail || 'Erro ao mover') },
+    }
+  )
+
+  const deletarCategoriaM = useMutation(
+    (id: number) => api.delete(`/categorias/${id}`),
+    {
+      onSuccess: () => {
+        toast.success('Categoria removida')
+        queryClient.invalidateQueries('categorias')
+        queryClient.invalidateQueries('produtos')
+        setConfirmDelCat(null)
+      },
+      onError: (e: any) => { toast.error(e.response?.data?.detail || 'Erro ao remover categoria') },
+    }
   )
 
   const criarM = useMutation(
@@ -120,7 +235,20 @@ export default function EstoquePage() {
   )
 
   const editarM = useMutation(
-    ({ id, payload }: any) => api.put(`/produtos/${id}`, payload).then(r => r.data),
+    async ({ id, payload, estoqueAtualNovo, estoqueAtualOriginal }: any) => {
+      const res = await api.put(`/produtos/${id}`, payload).then(r => r.data)
+      const novo = Number(estoqueAtualNovo)
+      const orig = Number(estoqueAtualOriginal)
+      if (!Number.isNaN(novo) && novo !== orig) {
+        await api.post('/estoque/ajuste', {
+          produto_id: id,
+          tipo: 'ajuste',
+          quantidade: novo,
+          observacao: 'Ajuste via edição de cadastro',
+        })
+      }
+      return res
+    },
     {
       onSuccess: () => {
         toast.success('Produto atualizado!')
@@ -142,6 +270,9 @@ export default function EstoquePage() {
       onError: (e: any) => { toast.error(e.response?.data?.detail || 'Erro ao remover') },
     }
   )
+
+  const categoriasTree     = useMemo(() => buildTree(categorias || []), [categorias])
+  const categoriasOrdenadas = useMemo(() => flattenTree(categoriasTree), [categoriasTree])
 
   const ajusteM = useMutation(
     (payload: any) => api.post('/estoque/ajuste', payload).then(r => r.data),
@@ -171,8 +302,9 @@ export default function EstoquePage() {
       preco_venda: String(p.preco_venda),
       preco_custo: String(p.preco_custo),
       unidade_medida: p.unidade_medida,
-      estoque_atual: String(p.estoque_atual),
-      estoque_minimo: String(p.estoque_minimo),
+      // Strip trailing zeros so "5.000" shows as "5", not "five thousand" in PT-BR
+      estoque_atual: String(parseFloat(String(p.estoque_atual))),
+      estoque_minimo: String(parseFloat(String(p.estoque_minimo))),
       descricao: '',
     })
     setShowForm(true)
@@ -196,13 +328,18 @@ export default function EstoquePage() {
       preco_venda: parseFloat(form.preco_venda),
       preco_custo: parseFloat(form.preco_custo) || 0,
       unidade_medida: form.unidade_medida,
-      estoque_minimo: parseFloat(form.estoque_minimo) || 0,
+      estoque_minimo: parseQtd(form.estoque_minimo),
     }
 
     if (editando) {
-      editarM.mutate({ id: editando.id, payload })
+      editarM.mutate({
+        id: editando.id,
+        payload,
+        estoqueAtualNovo: parseQtd(form.estoque_atual),
+        estoqueAtualOriginal: editando.estoque_atual,
+      })
     } else {
-      payload.estoque_atual = parseFloat(form.estoque_atual) || 0
+      payload.estoque_atual = parseQtd(form.estoque_atual)
       criarM.mutate(payload)
     }
   }
@@ -219,7 +356,7 @@ export default function EstoquePage() {
   }
 
   return (
-    <div className="p-6 space-y-5" style={{ background: 'var(--clr-bg)', minHeight: '100vh' }}>
+    <div className="p-6 space-y-5" style={{ background: 'var(--clr-bg)' }}>
 
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
@@ -237,6 +374,15 @@ export default function EstoquePage() {
             onChange={e => setBusca(e.target.value)}
             className="input w-64"
           />
+          <button
+            onClick={() => setShowCategorias(true)}
+            className="text-sm font-medium px-3 py-2 rounded-xl transition-colors whitespace-nowrap"
+            style={{ color: 'var(--clr-text)', background: 'var(--clr-surface)', border: '1px solid var(--clr-border)' }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-green-pale)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-surface)'}
+          >
+            Categorias
+          </button>
           <button onClick={abrirNovo} className="btn-action whitespace-nowrap">
             + Novo Produto
           </button>
@@ -436,8 +582,10 @@ export default function EstoquePage() {
                   className="input"
                 >
                   <option value="">-- Selecione --</option>
-                  {(categorias || []).map((c: Categoria) => (
-                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  {categoriasOrdenadas.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.caminho}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -480,28 +628,26 @@ export default function EstoquePage() {
                     {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
                   </select>
                 </div>
-                {!editando && (
-                  <div>
-                    <label className="label">Estoque Inicial</label>
-                    <input
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      value={form.estoque_atual}
-                      onChange={e => setForm(f => ({ ...f, estoque_atual: e.target.value }))}
-                      className="input font-mono text-right"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="label">{editando ? 'Estoque Atual' : 'Estoque Inicial'}</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={form.estoque_atual}
+                    onChange={e => setForm(f => ({ ...f, estoque_atual: e.target.value }))}
+                    className="input font-mono text-right"
+                    placeholder="0"
+                  />
+                </div>
                 <div>
                   <label className="label">Estoque Mínimo</label>
                   <input
-                    type="number"
-                    step="0.001"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     value={form.estoque_minimo}
                     onChange={e => setForm(f => ({ ...f, estoque_minimo: e.target.value }))}
                     className="input font-mono text-right"
+                    placeholder="0"
                   />
                 </div>
               </div>
@@ -578,12 +724,12 @@ export default function EstoquePage() {
                   Quantidade {ajuste.tipo === 'ajuste' ? '(saldo final)' : ''}
                 </label>
                 <input
-                  type="number"
-                  step="0.001"
-                  min="0.001"
+                  type="text"
+                  inputMode="decimal"
                   value={ajuste.quantidade}
                   onChange={e => setAjuste({ ...ajuste, quantidade: e.target.value })}
                   className="input text-xl font-mono text-center h-14"
+                  placeholder="0"
                   autoFocus
                 />
               </div>
@@ -605,7 +751,7 @@ export default function EstoquePage() {
                 onClick={() => ajusteM.mutate({
                   produto_id: ajuste.produto.id,
                   tipo: ajuste.tipo,
-                  quantidade: parseFloat(ajuste.quantidade),
+                  quantidade: parseQtd(ajuste.quantidade),
                   observacao: ajuste.observacao,
                 })}
                 disabled={!ajuste.quantidade || ajusteM.isLoading}
@@ -613,6 +759,262 @@ export default function EstoquePage() {
               >
                 {ajusteM.isLoading ? 'Salvando...' : 'Confirmar Ajuste'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Gerenciar Categorias */}
+      {showCategorias && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(25,40,25,0.55)', backdropFilter: 'blur(3px)' }}>
+          <div
+            className="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
+            style={{ border: '1px solid var(--clr-border)' }}
+          >
+            <div
+              className="flex items-center justify-between px-6 py-4"
+              style={{ borderBottom: '1px solid var(--clr-border)', background: 'var(--clr-green-pale)' }}
+            >
+              <div>
+                <h2 className="font-bold text-base" style={{ color: 'var(--clr-text)' }}>Categorias</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>
+                  {(categorias || []).length} cadastrada{(categorias || []).length !== 1 ? 's' : ''} · hierárquica
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCategorias(false); setConfirmDelCat(null)
+                  setNovaCategoria(''); setNovoParentId(''); setMovendoCat(null)
+                }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                style={{ color: 'var(--clr-text-muted)' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-border)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+              >
+                <IconClose />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 overflow-y-auto">
+              <form
+                onSubmit={e => {
+                  e.preventDefault()
+                  const nome = novaCategoria.trim()
+                  if (!nome) return toast.error('Informe o nome da categoria')
+                  criarCategoriaM.mutate({
+                    nome,
+                    parent_id: novoParentId ? parseInt(novoParentId) : null,
+                  })
+                }}
+                className="space-y-2"
+              >
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={novaCategoria}
+                    onChange={e => setNovaCategoria(e.target.value)}
+                    className="input flex-1"
+                    placeholder="Nova categoria..."
+                    maxLength={60}
+                  />
+                  <button
+                    type="submit"
+                    disabled={criarCategoriaM.isLoading || !novaCategoria.trim()}
+                    className="btn-action whitespace-nowrap"
+                  >
+                    {criarCategoriaM.isLoading ? 'Adicionando...' : 'Adicionar'}
+                  </button>
+                </div>
+                <div>
+                  <label className="text-xs block mb-1" style={{ color: 'var(--clr-text-muted)' }}>
+                    Criar dentro de:
+                  </label>
+                  <select
+                    value={novoParentId}
+                    onChange={e => setNovoParentId(e.target.value)}
+                    className="input text-sm"
+                    style={novoParentId ? { borderColor: 'var(--clr-green)', background: 'var(--clr-green-pale)' } : undefined}
+                  >
+                    <option value="">— Categoria raiz (sem pai)</option>
+                    {categoriasOrdenadas.map(c => (
+                      <option key={c.id} value={c.id}>{c.caminho}</option>
+                    ))}
+                  </select>
+                  {novoParentId && (
+                    <button
+                      type="button"
+                      onClick={() => setNovoParentId('')}
+                      className="text-xs mt-1 underline"
+                      style={{ color: 'var(--clr-text-muted)' }}
+                    >
+                      Limpar (voltar a criar como raiz)
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              <div className="space-y-1">
+                {categoriasOrdenadas.map(c => {
+                  const emUso = (produtos || []).filter((p: Produto) => p.categoria_id === c.id).length
+                  const ehConfirm = confirmDelCat?.id === c.id
+                  const movendo   = movendoCat === c.id
+                  const temFilhos = c.filhos.length > 0
+                  // Bloqueia escolher como pai: ele mesmo OU qualquer descendente
+                  const descendentes = new Set<number>()
+                  const coletar = (n: CategoriaNode) => { descendentes.add(n.id); n.filhos.forEach(coletar) }
+                  coletar(c)
+                  return (
+                    <div
+                      key={c.id}
+                      className="relative flex items-center justify-between gap-3 px-3 py-2 rounded-lg"
+                      style={{
+                        background: c.nivel === 0 ? 'var(--clr-green-pale)' : 'var(--clr-bg)',
+                        border: '1px solid var(--clr-border)',
+                        marginLeft: c.nivel * 28,
+                        borderLeft: c.nivel > 0 ? '3px solid var(--clr-green-med)' : '1px solid var(--clr-border)',
+                      }}
+                    >
+                      <div className="min-w-0 flex-1">
+                        {editandoCat === c.id ? (
+                          <form
+                            className="flex items-center gap-1 mb-1"
+                            onSubmit={e => {
+                              e.preventDefault()
+                              const nome = editNomeCat.trim()
+                              if (!nome) return toast.error('Nome não pode ser vazio')
+                              renomearCategoriaM.mutate({ id: c.id, nome })
+                            }}
+                          >
+                            <input
+                              autoFocus
+                              value={editNomeCat}
+                              onChange={e => setEditNomeCat(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Escape') setEditandoCat(null) }}
+                              className="input text-sm flex-1 py-1 h-8"
+                              maxLength={80}
+                            />
+                            <button
+                              type="submit"
+                              disabled={renomearCategoriaM.isLoading}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
+                              style={{ background: 'var(--clr-green)', color: '#fff', border: 'none', flexShrink: 0 }}
+                            >
+                              ✓
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditandoCat(null)}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center"
+                              style={{ background: 'var(--clr-border)', color: 'var(--clr-text-muted)', border: 'none', flexShrink: 0 }}
+                            >
+                              ✕
+                            </button>
+                          </form>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => { setEditandoCat(c.id); setEditNomeCat(c.nome); setMovendoCat(null); setConfirmDelCat(null) }}
+                            className="font-medium text-sm text-left w-full truncate flex items-center gap-1.5 group"
+                            style={{
+                              color: 'var(--clr-text)',
+                              fontWeight: c.nivel === 0 ? 700 : 500,
+                              background: 'none',
+                              border: 'none',
+                              padding: 0,
+                              cursor: 'text',
+                            }}
+                            title="Clique para editar o nome"
+                          >
+                            {c.nome}
+                            <svg className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                              <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/>
+                            </svg>
+                          </button>
+                        )}
+                        {c.nivel > 0 && c.caminho.includes('›') && (
+                          <div className="text-[11px] truncate" style={{ color: 'var(--clr-text-muted)' }}>
+                            em {c.caminho.split(' › ').slice(0, -1).join(' › ')}
+                          </div>
+                        )}
+                        <div className="text-xs mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>
+                          {emUso} produto{emUso !== 1 ? 's' : ''}
+                          {temFilhos && ` · ${c.filhos.length} subcategoria${c.filhos.length !== 1 ? 's' : ''}`}
+                        </div>
+                        {movendo && (
+                          <select
+                            autoFocus
+                            defaultValue={c.parent_id ? String(c.parent_id) : ''}
+                            onChange={e => {
+                              const v = e.target.value
+                              moverCategoriaM.mutate({
+                                id: c.id,
+                                parent_id: v ? parseInt(v) : null,
+                              })
+                            }}
+                            className="input text-xs mt-2"
+                          >
+                            <option value="">— Categoria raiz (sem pai)</option>
+                            {categoriasOrdenadas
+                              .filter(opt => !descendentes.has(opt.id))
+                              .map(opt => (
+                                <option key={opt.id} value={opt.id}>
+                                  {opt.caminho}
+                                </option>
+                              ))}
+                          </select>
+                        )}
+                      </div>
+                      {ehConfirm ? (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setConfirmDelCat(null)}
+                            className="text-xs font-medium px-2.5 py-1 rounded-lg"
+                            style={{ color: 'var(--clr-text)', background: 'var(--clr-surface)', border: '1px solid var(--clr-border)' }}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={() => deletarCategoriaM.mutate(c.id)}
+                            disabled={deletarCategoriaM.isLoading}
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg"
+                            style={{ background: 'var(--clr-danger)', color: '#fff', border: 'none' }}
+                          >
+                            {deletarCategoriaM.isLoading ? 'Removendo...' : 'Confirmar'}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setMovendoCat(movendo ? null : c.id)}
+                            className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors"
+                            style={{ color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE' }}
+                          >
+                            {movendo ? 'Fechar' : 'Mover'}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelCat(c)}
+                            disabled={temFilhos}
+                            title={temFilhos ? 'Remova ou mova as subcategorias antes' : ''}
+                            className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ color: 'var(--clr-danger)', background: 'var(--clr-danger-bg)', border: '1px solid #FCA5A5' }}
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+                {(categorias || []).length === 0 && (
+                  <p className="text-center text-sm py-8" style={{ color: 'var(--clr-text-muted)' }}>
+                    Nenhuma categoria cadastrada
+                  </p>
+                )}
+              </div>
+
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--clr-text-muted)' }}>
+                Use "Mover" para reorganizar a hierarquia. Categorias com subcategorias precisam ser esvaziadas antes de remover.
+              </p>
             </div>
           </div>
         </div>
