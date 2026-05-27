@@ -160,6 +160,9 @@ function StockMiniBar({ atual, minimo }: { atual: number; minimo: number }) {
   )
 }
 
+// Formats stock quantities: strips trailing zeros ("5.000" → "5", "2.500" → "2.5")
+const fmtQtd = (v: string | number) => String(parseFloat(String(v)))
+
 // ── KPI Icon map ───────────────────────────────────────────────────────────────
 
 const KPI_ICONS: Record<string, JSX.Element> = {
@@ -445,12 +448,12 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-sm font-semibold" style={{ color: 'var(--clr-text)' }}>{a.produto_nome}</p>
                     <span className="font-mono font-bold text-sm" style={{ color: a.urgente ? 'var(--clr-danger)' : 'var(--clr-warning)' }}>
-                      {a.estoque_atual}
+                      {fmtQtd(a.estoque_atual)}
                     </span>
                   </div>
                   <StockMiniBar atual={parseFloat(a.estoque_atual)} minimo={parseFloat(a.estoque_minimo)} />
                   <p className="text-[10px] mt-1" style={{ color: 'var(--clr-text-muted)' }}>
-                    Mínimo: {a.estoque_minimo} {a.unidade_medida}
+                    Mínimo: {fmtQtd(a.estoque_minimo)} {a.unidade_medida}
                   </p>
                 </div>
               ))}
@@ -502,7 +505,7 @@ export default function DashboardPage() {
                       {String(idx + 1).padStart(2, '0')}
                     </td>
                     <td className="px-5 py-3 font-semibold text-sm" style={{ color: 'var(--clr-text)' }}>{item.produto_nome}</td>
-                    <td className="px-5 py-3 font-mono text-sm" style={{ color: 'var(--clr-text-muted)' }}>{item.quantidade_vendida}</td>
+                    <td className="px-5 py-3 font-mono text-sm" style={{ color: 'var(--clr-text-muted)' }}>{fmtQtd(item.quantidade_vendida)}</td>
                     <td className="px-5 py-3 font-mono font-semibold text-sm" style={{ color: 'var(--clr-text)' }}>{formatBRL(item.faturamento)}</td>
                     <td className="px-5 py-3 w-40">
                       <div className="flex items-center gap-2">

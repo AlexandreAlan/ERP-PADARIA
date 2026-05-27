@@ -153,8 +153,17 @@ async def registrar_suprimento(
 
 
 async def get_sessao_ativa(usuario_id: int, db: AsyncSession) -> Optional[SessaoCaixa]:
-    return (await db.execute(
+    # Prefer the current user's own session
+    own = (await db.execute(
         select(SessaoCaixa).where(SessaoCaixa.usuario_id == usuario_id, SessaoCaixa.status == "aberto")
+    )).scalar_one_or_none()
+    if own:
+        return own
+    # Fall back to any open session (single-register shared use)
+    return (await db.execute(
+        select(SessaoCaixa).where(SessaoCaixa.status == "aberto")
+        .order_by(SessaoCaixa.opened_at.desc())
+        .limit(1)
     )).scalar_one_or_none()
 
 
