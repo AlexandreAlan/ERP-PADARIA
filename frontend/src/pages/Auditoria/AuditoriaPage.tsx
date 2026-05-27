@@ -3,6 +3,63 @@ import { useQuery } from 'react-query'
 import { format } from 'date-fns'
 import { api } from '@/config/api'
 
+// ── Human-readable description ────────────────────────────────────────────────
+
+const ENTIDADE_LABEL: Record<string, string> = {
+  venda:        'Venda',
+  usuario:      'Usuário',
+  sessao_caixa: 'Caixa',
+  produto:      'Produto',
+  estoque:      'Estoque',
+  compra:       'Compra',
+}
+
+function descrever(log: any): string {
+  const ent  = ENTIDADE_LABEL[log.entidade] ?? log.entidade
+  const id   = `#${log.entidade_id}`
+
+  switch (log.acao) {
+    case 'login':    return 'Fez login no sistema'
+    case 'logout':   return 'Saiu do sistema'
+    case 'criar':
+      if (log.entidade === 'sessao_caixa') return `Abriu o Caixa ${id}`
+      if (log.entidade === 'venda')        return `Registrou a Venda ${id}`
+      return `Criou ${ent} ${id}`
+    case 'editar':   return `Editou ${ent} ${id}`
+    case 'deletar':  return `Removeu ${ent} ${id}`
+    case 'cancelar':
+      if (log.entidade === 'venda') return `Cancelou a Venda ${id}`
+      return `Cancelou ${ent} ${id}`
+    case 'ajuste':   return `Ajustou estoque do Produto ${id}`
+    default:         return `${log.acao} em ${ent} ${id}`
+  }
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+
+function AcaoBadge({ acao }: { acao: string }) {
+  const styles: Record<string, { bg: string; color: string; border: string }> = {
+    criar:    { bg: 'var(--clr-green-lite)', color: 'var(--clr-green)',     border: 'var(--clr-border-2)' },
+    editar:   { bg: '#EFF6FF',              color: '#1D4ED8',               border: '#BFDBFE' },
+    deletar:  { bg: 'var(--clr-danger-bg)', color: 'var(--clr-danger)',     border: '#FCA5A5' },
+    cancelar: { bg: 'var(--clr-warning-bg)',color: 'var(--clr-warning)',    border: '#FDE68A' },
+    login:    { bg: 'var(--clr-green-pale)',color: 'var(--clr-text-muted)', border: 'var(--clr-border)' },
+    logout:   { bg: 'var(--clr-green-pale)',color: 'var(--clr-text-muted)', border: 'var(--clr-border)' },
+    ajuste:   { bg: '#F5F3FF',              color: '#6D28D9',               border: '#DDD6FE' },
+  }
+  const s = styles[acao] ?? styles.login
+  return (
+    <span
+      className="inline-flex items-center text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md"
+      style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+    >
+      {acao}
+    </span>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default function AuditoriaPage() {
   const [entidade, setEntidade] = useState('')
   const [acao,     setAcao]     = useState('')
@@ -29,14 +86,17 @@ export default function AuditoriaPage() {
           <option value="venda">Venda</option>
           <option value="produto">Produto</option>
           <option value="sessao_caixa">Caixa</option>
+          <option value="estoque">Estoque</option>
+          <option value="compra">Compra</option>
         </select>
         <select value={acao} onChange={e => setAcao(e.target.value)} className="input w-44">
           <option value="">Todas as ações</option>
+          <option value="login">Login</option>
           <option value="criar">Criar</option>
           <option value="editar">Editar</option>
-          <option value="deletar">Deletar</option>
           <option value="cancelar">Cancelar</option>
-          <option value="login">Login</option>
+          <option value="deletar">Deletar</option>
+          <option value="ajuste">Ajuste de Estoque</option>
         </select>
       </div>
 
@@ -48,8 +108,10 @@ export default function AuditoriaPage() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--clr-border)', background: 'var(--clr-green-pale)' }}>
-              {['Data/Hora', 'Entidade', 'ID', 'Ação', 'Usuário', 'IP'].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>{h}</th>
+              {['Data/Hora', 'Usuário', 'O que fez', 'Ação', 'IP'].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
@@ -65,21 +127,44 @@ export default function AuditoriaPage() {
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-green-pale)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? 'var(--clr-surface)' : 'var(--clr-bg)'}
               >
-                <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--clr-text-muted)' }}>
-                  {format(new Date(log.created_at), 'dd/MM/yy HH:mm:ss')}
+                {/* Data */}
+                <td className="px-4 py-3 font-mono text-xs whitespace-nowrap" style={{ color: 'var(--clr-text-muted)' }}>
+                  {format(new Date(log.created_at), 'dd/MM/yy')}
+                  <br />
+                  <span className="font-bold">{format(new Date(log.created_at), 'HH:mm:ss')}</span>
                 </td>
-                <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--clr-text)' }}>{log.entidade}</td>
-                <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--clr-text-muted)' }}>#{log.entidade_id}</td>
-                <td className="px-4 py-2.5">
+
+                {/* Usuário */}
+                <td className="px-4 py-3">
+                  <p className="font-semibold text-sm leading-tight" style={{ color: 'var(--clr-text)' }}>
+                    {log.usuario_nome}
+                  </p>
+                  {log.usuario_perfil && (
+                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>
+                      {log.usuario_perfil}
+                    </p>
+                  )}
+                </td>
+
+                {/* Descrição */}
+                <td className="px-4 py-3 text-sm" style={{ color: 'var(--clr-text)' }}>
+                  {descrever(log)}
+                </td>
+
+                {/* Badge de ação */}
+                <td className="px-4 py-3">
                   <AcaoBadge acao={log.acao} />
                 </td>
-                <td className="px-4 py-2.5 text-sm" style={{ color: 'var(--clr-text)' }}>{log.usuario_id || 'Sistema'}</td>
-                <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--clr-text-muted)' }}>{log.ip_address || '—'}</td>
+
+                {/* IP */}
+                <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--clr-text-muted)' }}>
+                  {log.ip_address || '—'}
+                </td>
               </tr>
             ))}
             {!isLoading && (data || []).length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-sm" style={{ color: 'var(--clr-text-muted)' }}>
+                <td colSpan={5} className="px-4 py-12 text-center text-sm" style={{ color: 'var(--clr-text-muted)' }}>
                   Nenhum registro encontrado
                 </td>
               </tr>
@@ -95,28 +180,5 @@ export default function AuditoriaPage() {
         )}
       </div>
     </div>
-  )
-}
-
-function AcaoBadge({ acao }: { acao: string }) {
-  const styles: Record<string, { bg: string; color: string; border: string }> = {
-    criar:    { bg: 'var(--clr-green-lite)', color: 'var(--clr-green)',   border: 'var(--clr-border-2)' },
-    editar:   { bg: '#EFF6FF',              color: '#1D4ED8',             border: '#BFDBFE' },
-    deletar:  { bg: 'var(--clr-danger-bg)', color: 'var(--clr-danger)',   border: '#FCA5A5' },
-    cancelar: { bg: 'var(--clr-warning-bg)',color: 'var(--clr-warning)',  border: '#FDE68A' },
-    login:    { bg: 'var(--clr-green-pale)',color: 'var(--clr-text-muted)', border: 'var(--clr-border)' },
-    logout:   { bg: 'var(--clr-green-pale)',color: 'var(--clr-text-muted)', border: 'var(--clr-border)' },
-    ajuste:   { bg: '#F5F3FF',              color: '#6D28D9',             border: '#DDD6FE' },
-  }
-
-  const s = styles[acao] ?? styles.login
-
-  return (
-    <span
-      className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-md"
-      style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
-    >
-      {acao}
-    </span>
   )
 }
