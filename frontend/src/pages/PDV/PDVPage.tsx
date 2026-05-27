@@ -136,7 +136,7 @@ export default function PDVPage() {
 
         {/* Carrinho lateral (Desktop) / Drawer (Mobile) */}
         <div className={`
-          ${isMobile ? 'fixed inset-0 z-[200]' : 'w-[520px] border-l border-gray-200 bg-white flex flex-col'}
+          ${isMobile ? 'fixed inset-0 z-[200]' : 'w-[420px] border-l border-gray-200 bg-white flex flex-col'}
           ${isMobile && !showCartMobile ? 'pointer-events-none' : 'pointer-events-auto'}
         `}>
            {isMobile && (
