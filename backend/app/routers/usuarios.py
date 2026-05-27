@@ -44,7 +44,11 @@ async def listar(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(require_admin),
 ):
-    result = await db.execute(select(Usuario).where(Usuario.deleted_at == None).order_by(Usuario.nome))
+    result = await db.execute(
+        select(Usuario)
+        .where(Usuario.deleted_at == None, Usuario.perfil != "super_admin")
+        .order_by(Usuario.nome)
+    )
     return result.scalars().all()
 
 
@@ -82,6 +86,8 @@ async def atualizar(
     usuario = result.scalar_one_or_none()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    if usuario.perfil == "super_admin":
+        raise HTTPException(status_code=403, detail="Usuário não encontrado")
 
     for field, value in payload.model_dump(exclude_unset=True, exclude={"nova_senha"}).items():
         setattr(usuario, field, value)
@@ -104,6 +110,8 @@ async def remover(
     result = await db.execute(select(Usuario).where(Usuario.id == usuario_id))
     usuario = result.scalar_one_or_none()
     if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    if usuario.perfil == "super_admin":
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     usuario.deleted_at = datetime.utcnow()
     usuario.updated_at = datetime.utcnow()
