@@ -33,10 +33,21 @@ const FORMAS = [
   { key: 'pix',            label: 'PIX',      icon: <IconPix />,     cor: '#0369A1', bg: '#F0F9FF', border: '#BAE6FD' },
 ]
 
+const MAQUINETAS = ['1', '2', '3', '4']
+
+const isCard = (forma: string) => forma === 'cartao_credito' || forma === 'cartao_debito'
+
+function labelPagamento(pg: Payment): string {
+  const info = FORMAS.find(f => f.key === pg.forma)
+  const base = info?.label ?? pg.forma
+  return pg.nsu ? `${base} — Maq. ${pg.nsu}` : base
+}
+
 export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: Props) {
   const [pagamentos, setPagamentos] = useState<Payment[]>([])
   const [formaAtual, setFormaAtual] = useState('dinheiro')
   const [valorAtual, setValorAtual] = useState('')
+  const [maquineta,  setMaquineta]  = useState<string | null>(null)
 
   const totalPago = useMemo(() => pagamentos.reduce((a, p) => a + p.valor, 0), [pagamentos])
   const restante  = useMemo(() => parseFloat(Math.max(0, total - totalPago).toFixed(2)), [total, totalPago])
@@ -48,17 +59,24 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
     return tmp > total ? parseFloat((tmp - total).toFixed(2)) : 0
   }, [valorAtual, totalPago, total, formaAtual])
 
-  // Preenche restante automaticamente ao trocar forma de pagamento
+  // Preenche restante e reseta maquineta ao trocar forma de pagamento
   useEffect(() => {
     if (restante > 0) setValorAtual(restante.toFixed(2))
     else setValorAtual('')
+    setMaquineta(null)
   }, [formaAtual])
+
+  const maquinetaOk = !isCard(formaAtual) || !!maquineta
 
   const addPagamento = () => {
     const valor = parseFloat(valorAtual)
-    if (!valor || valor <= 0) return
-    setPagamentos(prev => [...prev, { forma: formaAtual, valor }])
+    if (!valor || valor <= 0 || !maquinetaOk) return
+    setPagamentos(prev => [
+      ...prev,
+      { forma: formaAtual, valor, nsu: maquineta ?? undefined },
+    ])
     setValorAtual('')
+    setMaquineta(null)
   }
 
   const removePagamento = (i: number) => setPagamentos(prev => prev.filter((_, idx) => idx !== i))
@@ -68,22 +86,22 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
     if (pagamentos.length === 0) {
       let valor: number
       if (formaAtual === 'dinheiro') {
-        // Garante que o valor seja ao menos o total (dinheiro pode ter troco, mas não pode ser insuficiente)
         valor = valorNumerico > 0 ? Math.max(valorNumerico, total) : total
       } else {
         valor = valorNumerico > 0 ? valorNumerico : total
       }
-      onConfirm([{ forma: formaAtual, valor }])
+      onConfirm([{ forma: formaAtual, valor, nsu: maquineta ?? undefined }])
     } else {
       onConfirm(pagamentos)
     }
   }
 
-  const podeConcluir = pagamentos.length > 0
+  const podeConcluir = (pagamentos.length > 0
     ? totalPago >= total
     : formaAtual === 'dinheiro'
-      ? true   // dinheiro sempre pode — backend calcula o troco
+      ? true
       : valorNumerico >= total
+  ) && maquinetaOk
 
   const formaInfo = FORMAS.find(f => f.key === formaAtual)!
 
@@ -137,6 +155,38 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
             })}
           </div>
 
+          {/* Seletor de maquineta (crédito / débito) */}
+          {isCard(formaAtual) && (
+            <div>
+              <p className="label mb-2">Selecione a maquineta</p>
+              <div className="grid grid-cols-4 gap-2">
+                {MAQUINETAS.map(n => {
+                  const sel = maquineta === n
+                  const cor = formaInfo.cor
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => setMaquineta(n)}
+                      className="h-11 rounded-xl font-bold text-base transition-all"
+                      style={{
+                        border: `2px solid ${sel ? cor : 'var(--clr-border)'}`,
+                        background: sel ? formaInfo.bg : '#FAFCFA',
+                        color: sel ? cor : 'var(--clr-text-muted)',
+                      }}
+                    >
+                      {n}
+                    </button>
+                  )
+                })}
+              </div>
+              {!maquineta && (
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--clr-danger)' }}>
+                  Selecione a maquineta para continuar
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Valor recebido */}
           <div>
             <label className="label">Valor recebido (R$)</label>
@@ -170,23 +220,20 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
               <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>
                 Pagamentos adicionados
               </p>
-              {pagamentos.map((pg, i) => {
-                const info = FORMAS.find(f => f.key === pg.forma)
-                return (
-                  <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm"
-                    style={{ background: 'var(--clr-green-pale)', border: '1px solid var(--clr-border)' }}>
-                    <span style={{ color: 'var(--clr-text-med)' }}>{info?.label}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono font-semibold" style={{ color: 'var(--clr-text)' }}>{formatBRL(pg.valor)}</span>
-                      <button onClick={() => removePagamento(i)} style={{ color: 'var(--clr-danger)' }}>
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                      </button>
-                    </div>
+              {pagamentos.map((pg, i) => (
+                <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm"
+                  style={{ background: 'var(--clr-green-pale)', border: '1px solid var(--clr-border)' }}>
+                  <span style={{ color: 'var(--clr-text-med)' }}>{labelPagamento(pg)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono font-semibold" style={{ color: 'var(--clr-text)' }}>{formatBRL(pg.valor)}</span>
+                    <button onClick={() => removePagamento(i)} style={{ color: 'var(--clr-danger)' }}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           )}
 
@@ -194,7 +241,8 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
           {restante > 0 && pagamentos.length > 0 && (
             <button
               onClick={addPagamento}
-              className="w-full py-2 rounded-lg text-sm font-semibold transition-colors"
+              disabled={!maquinetaOk}
+              className="w-full py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40"
               style={{ border: '1px solid var(--clr-border)', color: 'var(--clr-text-med)', background: 'var(--clr-green-pale)' }}
             >
               + Adicionar pagamento parcial
