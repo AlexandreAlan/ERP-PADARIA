@@ -12,6 +12,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Roda como usuário sem privilégios (não-root). Limita o impacto de um RCE.
+RUN useradd -u 10001 -m appuser && mkdir -p /app/uploads && chown -R 10001:10001 /app
+USER 10001
+
 EXPOSE 8000
 
 # Produção: sem --reload. Concorrência é resolvida pelo event loop async.
