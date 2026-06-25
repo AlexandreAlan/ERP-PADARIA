@@ -595,3 +595,12 @@ Reinstale as dependências Python:
 cd backend
 venv\Scripts\pip.exe install -r requirements.txt --force-reinstall
 ```
+
+---
+
+## Segurança
+
+- **Backend em container não-root** (`USER 10001`): o processo da API não roda como root, limitando o impacto de uma eventual exploração.
+
+### Histórico de versões
+- **2026-06-25** — hardening: backend passa a rodar como usuário não-root (uid 10001) no Dockerfile.
