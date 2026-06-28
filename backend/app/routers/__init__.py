@@ -11,3 +11,4 @@ from app.routers import dashboard as dashboard  # noqa: F401
 from app.routers import relatorios as relatorios  # noqa: F401
 from app.routers import auditoria as auditoria  # noqa: F401
 from app.routers import configuracoes as configuracoes  # noqa: F401
+from app.routers import clientes as clientes  # noqa: F401
