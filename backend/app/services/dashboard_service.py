@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, date
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 
-from sqlalchemy import select, func, and_, cast, Numeric, desc
+from sqlalchemy import select, func, and_, cast, Numeric, desc, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.produto import Produto
@@ -13,6 +13,7 @@ from app.schemas.dashboard import (
     AlertaEstoque,
     CurvaABCItem,
     DashboardResponse,
+    MaquinetaResumo,
 )
 
 TWO = Decimal("0.01")
@@ -38,12 +39,16 @@ async def get_dashboard(
     # 5. Métricas Adicionais de "Crescimento"
     comparativo = await calcular_comparativo(data_inicio, data_fim, db)
 
+    # 6. Breakdown por maquineta
+    maquinetas = await calcular_maquinetas(data_inicio, data_fim, db)
+
     return DashboardResponse(
         kpis=kpis,
         vendas_por_dia=vendas_dia,
         alertas_estoque=alertas,
         curva_abc=abc,
-        crescimento=comparativo
+        crescimento=comparativo,
+        maquinetas=maquinetas,
     )
 
 async def calcular_kpis(
@@ -225,3 +230,47 @@ async def calcular_comparativo(data_inicio: date, data_fim: date, db: AsyncSessi
         "vendas": pct_diff(Decimal(atual.quantidade_vendas), Decimal(anterior.quantidade_vendas)),
         "lucro": pct_diff(atual.lucro_bruto, anterior.lucro_bruto)
     }
+
+
+async def calcular_maquinetas(
+    data_inicio: date,
+    data_fim: date,
+    db: AsyncSession,
+) -> list[MaquinetaResumo]:
+    dt_inicio = datetime.combine(data_inicio, datetime.min.time())
+    dt_fim = datetime.combine(data_fim, datetime.max.time())
+
+    result = await db.execute(
+        select(
+            Pagamento.nsu.label("maquineta"),
+            func.coalesce(
+                func.sum(case((Pagamento.forma == "cartao_credito", Pagamento.valor), else_=Decimal("0"))),
+                Decimal("0"),
+            ).label("credito"),
+            func.coalesce(
+                func.sum(case((Pagamento.forma == "cartao_debito", Pagamento.valor), else_=Decimal("0"))),
+                Decimal("0"),
+            ).label("debito"),
+            func.coalesce(func.sum(Pagamento.valor), Decimal("0")).label("total"),
+        )
+        .join(Venda, Venda.id == Pagamento.venda_id)
+        .where(
+            Venda.status == "concluida",
+            Venda.created_at.between(dt_inicio, dt_fim),
+            Pagamento.forma.in_(["cartao_credito", "cartao_debito"]),
+            Pagamento.nsu.isnot(None),
+            Pagamento.nsu != "",
+        )
+        .group_by(Pagamento.nsu)
+        .order_by(Pagamento.nsu)
+    )
+
+    return [
+        MaquinetaResumo(
+            maquineta=row.maquineta,
+            credito=Decimal(str(row.credito)).quantize(TWO, ROUND_HALF_UP),
+            debito=Decimal(str(row.debito)).quantize(TWO, ROUND_HALF_UP),
+            total=Decimal(str(row.total)).quantize(TWO, ROUND_HALF_UP),
+        )
+        for row in result
+    ]
