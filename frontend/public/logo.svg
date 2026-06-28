@@ -1,54 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2D6A4F"/>
-      <stop offset="100%" stop-color="#1A2E1A"/>
-    </linearGradient>
-    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
-      <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
-    </linearGradient>
-    <linearGradient id="grn" x1="0%" y1="0%" x2="8%" y2="100%">
-      <stop offset="0%" stop-color="#D8F3DC"/>
-      <stop offset="100%" stop-color="#74C69D"/>
-    </linearGradient>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <rect width="1200" height="400" fill="#fafafa"/>
 
-  <!-- Background -->
-  <rect width="200" height="200" rx="44" fill="url(#bg)"/>
-  <rect width="200" height="90"  rx="44" fill="url(#shine)"/>
-  <rect x="2" y="2" width="196" height="196" rx="42" fill="none" stroke="#52B788" stroke-width="1.5" opacity="0.35"/>
-  <rect x="7" y="7" width="186" height="186" rx="38"  fill="none" stroke="rgba(255,255,255,0.055)" stroke-width="1"/>
+  <!-- ── Symbol ── -->
+  <g transform="translate(100, 80)">
+    <rect width="240" height="240" rx="32" fill="#192819"/>
+    <path d="M 18 46 L 80 46 L 126 164 L 126 194 L 96 194 L 48 56 Z"
+          fill="rgba(255,255,255,0.96)"/>
+    <path d="M 114 46 L 174 46 L 208 194 L 178 194 L 144 56 L 114 76 Z"
+          fill="#52B788"/>
+  </g>
 
-  <!-- ─── Wheat ear (above the P) ─── -->
-  <!-- Thin stalk connecting wheat to P -->
-  <line x1="76" y1="56" x2="76" y2="26" stroke="rgba(216,243,220,0.68)" stroke-width="4" stroke-linecap="round"/>
+  <!-- ── Wordmark ── -->
+  <text x="398" y="232"
+        font-family="Inter, Geist, sans-serif"
+        font-size="122" font-weight="700"
+        fill="#1A2E1A" letter-spacing="-4">Nexshell</text>
 
-  <!-- Left grains -->
-  <ellipse cx="63" cy="44" rx="6.5" ry="11.5" fill="url(#grn)" transform="rotate(27 63 44)" opacity="0.82"/>
-  <ellipse cx="65" cy="32" rx="6"   ry="10"   fill="url(#grn)" transform="rotate(22 65 32)" opacity="0.91"/>
-
-  <!-- Right grains -->
-  <ellipse cx="89" cy="40" rx="6.5" ry="11.5" fill="url(#grn)" transform="rotate(-27 89 40)" opacity="0.82"/>
-  <ellipse cx="87" cy="28" rx="6"   ry="10"   fill="url(#grn)" transform="rotate(-22 87 28)" opacity="0.91"/>
-
-  <!-- Terminal grain -->
-  <ellipse cx="76" cy="26" rx="5" ry="8.5" fill="#D8F3DC" opacity="0.97"/>
-
-  <!-- Awns -->
-  <line x1="76" y1="26" x2="68" y2="16" stroke="#B7E4C7" stroke-width="2.5" stroke-linecap="round" opacity="0.70"/>
-  <line x1="76" y1="26" x2="84" y2="16" stroke="#B7E4C7" stroke-width="2.5" stroke-linecap="round" opacity="0.70"/>
-
-  <!-- ─── Bold P letterform ─── -->
-  <!-- Vertical stem -->
-  <line x1="76" y1="54" x2="76" y2="176"
-        stroke="rgba(216,243,220,0.95)" stroke-width="22" stroke-linecap="round"/>
-
-  <!-- Right bowl arc: M(76,54) → arc right → (76,140) -->
-  <path d="M 76 54 A 48 43 0 0 1 76 140"
-        fill="none" stroke="rgba(216,243,220,0.95)" stroke-width="22" stroke-linecap="round"/>
-
-  <!-- Soft inner highlight following bowl curve -->
-  <path d="M 86 68 A 28 24 0 0 1 86 126"
-        fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="7" stroke-linecap="round"/>
+  <!-- ── Tagline ── -->
+  <text x="402" y="280"
+        font-family="Inter, Geist, sans-serif"
+        font-size="27" font-weight="500"
+        fill="#7A9A74" letter-spacing="3.5">PDV &amp; GESTÃO</text>
 </svg>
