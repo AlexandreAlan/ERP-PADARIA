@@ -9,7 +9,10 @@ from datetime import datetime
 from decimal import Decimal
 
 from app.database import engine, Base, AsyncSessionLocal
-from app.models import *  # noqa — carrega todos os modelos
+from app.models import *  # noqa: F401,F403,F405 — carrega metadados de todos os modelos
+from app.models.usuario import Usuario  # noqa: F811
+from app.models.produto import Produto, Categoria, Fornecedor  # noqa: F811
+from app.models.caixa import Caixa  # noqa: F811
 from app.utils.security import hash_password
 
 
