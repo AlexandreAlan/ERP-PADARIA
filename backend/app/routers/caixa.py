@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,7 +22,7 @@ async def listar_caixas(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    result = await db.execute(select(Caixa).where(Caixa.ativo == True).order_by(Caixa.nome))
+    result = await db.execute(select(Caixa).where(Caixa.ativo.is_(True)).order_by(Caixa.nome))
     return result.scalars().all()
 
 
