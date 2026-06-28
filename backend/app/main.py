@@ -21,6 +21,7 @@ from app.routers import (
     auditoria,
     configuracoes,
     super_admin,
+    clientes,
 )
 
 settings = get_settings()
@@ -76,6 +77,7 @@ app.include_router(relatorios.router,   prefix=f"{PREFIX}/relatorios",   tags=["
 app.include_router(auditoria.router,    prefix=f"{PREFIX}/auditoria",    tags=["Auditoria"])
 app.include_router(configuracoes.router,prefix=f"{PREFIX}/configuracoes",tags=["Configurações"])
 app.include_router(super_admin.router,  prefix=f"{PREFIX}/super-admin", tags=["Super Admin"])
+app.include_router(clientes.router,     prefix=f"{PREFIX}/clientes",    tags=["Clientes"])
 
 
 @app.get("/api/health")
