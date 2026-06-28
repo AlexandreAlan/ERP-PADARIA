@@ -93,6 +93,7 @@ class CategoriaRead(BaseModel):
     nome: str
     descricao: Optional[str]
     ativo: bool
+    parent_id: Optional[int] = None
 
     model_config = {"from_attributes": True}
 
@@ -100,6 +101,13 @@ class CategoriaRead(BaseModel):
 class CategoriaCreate(BaseModel):
     nome: str
     descricao: Optional[str] = None
+    parent_id: Optional[int] = None
+
+
+class CategoriaUpdate(BaseModel):
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    parent_id: Optional[int] = None
 
 
 class FornecedorRead(BaseModel):
