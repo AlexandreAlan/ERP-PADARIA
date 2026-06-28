@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 
 from app.database import get_db
-from app.dependencies.auth import get_current_user, require_admin
+from app.dependencies.auth import require_admin
 from app.models.usuario import Usuario
 from app.utils.security import hash_password
 
@@ -46,7 +46,7 @@ async def listar(
 ):
     result = await db.execute(
         select(Usuario)
-        .where(Usuario.deleted_at == None, Usuario.perfil != "super_admin")
+        .where(Usuario.deleted_at.is_(None), Usuario.perfil != "super_admin")
         .order_by(Usuario.nome)
     )
     return result.scalars().all()
