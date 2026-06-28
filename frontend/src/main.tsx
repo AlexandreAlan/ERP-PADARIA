@@ -22,15 +22,18 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <App />
         <Toaster
-          position="top-right"
+          position="top-center"
           toastOptions={{
             style: {
-              background: '#080f1f',
-              color: '#c5d5ec',
-              border: '1px solid rgba(59,130,246,0.2)',
-              fontFamily: '"Exo 2", system-ui, sans-serif',
-              fontSize: '0.875rem',
-              boxShadow: '0 0 24px rgba(59,130,246,0.1)',
+              background: '#ffffff',
+              color: '#1A2E1A',
+              border: '1px solid #D8E4D8',
+              fontFamily: 'system-ui, sans-serif',
+              fontSize: '1rem',
+              fontWeight: '600',
+              borderRadius: '16px',
+              padding: '16px 24px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
             },
           }}
         />
