@@ -23,10 +23,19 @@
   --clr-danger-bg:  #FEF2F2;
   --clr-warning:    #B45309;
   --clr-warning-bg: #FFFBEB;
+  --bottom-nav-height: 64px;
 }
 
 @layer base {
-  * { box-sizing: border-box; }
+  * { 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body, #root {
+    overscroll-behavior-y: contain;
+    @apply h-full overflow-hidden;
+  }
 
   body {
     @apply antialiased;
@@ -36,184 +45,107 @@
     font-size: 14px;
   }
 
+  /* Melhoria de legibilidade mobile */
+  @media (max-width: 1024px) {
+    body { font-size: 16px; }
+    input, select, textarea { font-size: 16px !important; }
+  }
+
   .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--clr-border-2); border-radius: 10px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--clr-text-muted); }
-
-  ::selection { background: rgba(82,183,136,0.2); }
 }
 
 @layer components {
 
-  /* ─── Botão primário (verde) ─── */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* ─── Botão primário ─── */
   .btn-action, .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
-           font-semibold text-sm transition-all duration-150
-           focus:outline-none focus:ring-2 focus:ring-offset-1
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl
+           font-bold text-sm transition-all duration-150
+           focus:outline-none active:scale-95
            disabled:opacity-40 disabled:cursor-not-allowed;
     background: var(--clr-green);
     color: #FFFFFF;
-    focus-ring-color: var(--clr-green);
-    letter-spacing: 0.01em;
-  }
-  .btn-action:hover:not(:disabled), .btn-primary:hover:not(:disabled) {
-    background: var(--clr-green-med);
-  }
-  .btn-action:active:not(:disabled), .btn-primary:active:not(:disabled) {
-    background: #1B4332;
-    transform: scale(0.97);
+    box-shadow: 0 4px 12px rgba(45,106,79,0.2);
   }
 
   /* ─── Botão secundário ─── */
   .btn-bakery, .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
-           font-semibold text-sm transition-all duration-150
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl
+           font-bold text-sm transition-all duration-150
            focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed;
     background: var(--clr-surface);
     color: var(--clr-text);
     border: 1px solid var(--clr-border);
   }
-  .btn-bakery:hover:not(:disabled), .btn-secondary:hover:not(:disabled) {
-    background: var(--clr-green-pale);
-    border-color: var(--clr-border-2);
-  }
-
-  /* ─── Botão de perigo ─── */
-  .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
-           font-semibold text-sm transition-all duration-150
-           focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed;
-    background: var(--clr-danger);
-    color: #FFFFFF;
-  }
-  .btn-danger:hover:not(:disabled) { background: #991B1B; }
-  .btn-danger:active:not(:disabled) { background: #7F1D1D; }
-
-  /* ─── Botão de sucesso ─── */
-  .btn-success {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
-           font-semibold text-sm transition-all duration-150
-           focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed;
-    background: var(--clr-green-med);
-    color: #FFFFFF;
-  }
-  .btn-success:hover:not(:disabled) { background: var(--clr-green); }
 
   /* ─── Card ─── */
   .bakery-card, .card {
-    @apply bg-white rounded-xl p-6;
+    @apply bg-white rounded-2xl p-5;
     border: 1px solid var(--clr-border);
-    box-shadow: 0 1px 4px rgba(45,106,79,0.06);
-    transition: box-shadow 0.2s, transform 0.2s;
-  }
-  .bakery-card:hover, .card:hover {
-    box-shadow: 0 6px 20px rgba(45,106,79,0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(45,106,79,0.04);
   }
 
   /* ─── Product tile ─── */
   .product-tile {
-    @apply flex flex-col justify-between p-3 rounded-xl cursor-pointer select-none bg-white;
+    @apply flex flex-col justify-between p-3 rounded-2xl cursor-pointer select-none bg-white;
     border: 1px solid var(--clr-border);
     min-height: 82px;
-    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s, transform 0.12s;
-  }
-  .product-tile:hover {
-    border-color: var(--clr-green-med);
-    box-shadow: 0 4px 16px rgba(45,106,79,0.12);
-    background: var(--clr-green-pale);
-    transform: translateY(-1px);
+    transition: all 0.15s;
   }
   .product-tile:active {
-    background: var(--clr-green-lite);
-    transform: scale(0.97);
-    transition-duration: 0.07s;
+    background: var(--clr-green-pale);
+    transform: scale(0.95);
   }
 
   /* ─── Input ─── */
   .bakery-input, .input {
-    @apply w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-150
+    @apply w-full px-4 py-3 rounded-xl text-sm transition-all duration-150
            focus:outline-none bg-white;
     border: 1px solid var(--clr-border);
     color: var(--clr-text);
   }
   .bakery-input:focus, .input:focus {
     border-color: var(--clr-green-med);
-    box-shadow: 0 0 0 3px rgba(64,145,108,0.12);
-  }
-  .bakery-input::placeholder, .input::placeholder { color: var(--clr-text-muted); }
-
-  /* Select */
-  select.input, select.bakery-input {
-    @apply cursor-pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%237A9A74'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 1rem;
-    padding-right: 2.5rem;
-    appearance: none;
+    box-shadow: 0 0 0 4px rgba(64,145,108,0.1);
   }
 
   /* ─── Label ─── */
   .label {
-    @apply block text-xs font-semibold mb-1.5 uppercase tracking-wide;
-    color: var(--clr-text-med);
-    letter-spacing: 0.07em;
+    @apply block text-xs font-bold mb-1.5 uppercase tracking-wider opacity-60;
   }
 
   /* ─── Badges ─── */
   .badge-a {
-    @apply inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-md;
+    @apply inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider;
     background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0;
   }
-  .badge-b {
-    @apply inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-md;
-    background: var(--clr-warning-bg); color: var(--clr-warning); border: 1px solid #FDE68A;
-  }
-  .badge-c {
-    @apply inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-md;
-    background: var(--clr-green-pale); color: var(--clr-text-med); border: 1px solid var(--clr-border);
-  }
 
-  /* ─── Sidebar nav ─── */
+  /* ─── Nav ─── */
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium
-           transition-colors duration-150 cursor-pointer;
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all;
     color: rgba(180, 220, 180, 0.55);
   }
-  .nav-item:hover {
-    background: rgba(255,255,255,0.07);
-    color: rgba(220, 245, 220, 0.9);
-  }
-
   .nav-item-active {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold cursor-pointer;
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold;
     background: var(--clr-green-med);
     color: #FFFFFF;
   }
-
-  /* ─── Tabela ─── */
-  .tbl-row {
-    @apply transition-colors;
-    border-bottom: 1px solid var(--clr-bg);
-  }
-  .tbl-row:hover { background: var(--clr-green-pale); }
-
-  /* ─── Fade in ─── */
-  .animate-fade-in {
-    animation: fadeIn 0.18s ease-out both;
-  }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+.animate-fade-in { animation: fadeIn 0.2s ease-out both; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
