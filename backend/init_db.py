@@ -25,7 +25,10 @@ from datetime import datetime
 from sqlalchemy import select
 
 from app.database import engine, Base, AsyncSessionLocal
-from app.models import *  # noqa — registra todos os modelos no metadata
+from app.models import *  # noqa: F401,F403,F405 — registra metadados de todos os modelos
+from app.models.usuario import Usuario  # noqa: F811
+from app.models.caixa import Caixa  # noqa: F811
+from app.models.configuracao import ConfiguracaoEmpresa  # noqa: F811
 from app.utils.security import hash_password
 from app.config import get_settings
 
