@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import Optional
 from sqlalchemy import (
     Integer, SmallInteger, String, Text, Boolean, Numeric,
-    Enum as SAEnum, ForeignKey,
+    Enum as SAEnum, ForeignKey, UniqueConstraint,
 )
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from app.database import Base
@@ -11,13 +11,29 @@ from app.models.base import TimestampMixin, SoftDeleteMixin
 
 class Categoria(Base, TimestampMixin):
     __tablename__ = "categorias"
+    __table_args__ = (
+        UniqueConstraint(
+            "nome", "parent_id",
+            name="categorias_nome_parent_unique",
+            postgresql_nulls_not_distinct=True,
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nome: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
+    nome: Mapped[str] = mapped_column(String(80), nullable=False)
     descricao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    parent_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("categorias.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     produtos: Mapped[list["Produto"]] = relationship(back_populates="categoria")
+    parent: Mapped[Optional["Categoria"]] = relationship(
+        "Categoria", remote_side="Categoria.id", back_populates="filhos"
+    )
+    filhos: Mapped[list["Categoria"]] = relationship(
+        "Categoria", back_populates="parent", cascade="save-update"
+    )
 
 
 class Fornecedor(Base, TimestampMixin, SoftDeleteMixin):
