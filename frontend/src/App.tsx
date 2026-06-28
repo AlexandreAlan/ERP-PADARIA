@@ -11,6 +11,7 @@ import AuditoriaPage from '@/pages/Auditoria/AuditoriaPage'
 import ConfiguracoesPage from '@/pages/Configuracoes/ConfiguracoesPage'
 import AdminCentralPage from '@/pages/Admin/AdminCentralPage'
 import DocsPage from '@/pages/Docs/DocsPage'
+import ComprasPage from '@/pages/Compras/ComprasPage'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/pdv" element={<PDVPage />} />
           <Route path="/estoque" element={<EstoquePage />} />
           <Route path="/caixa" element={<CaixaPage />} />
+          <Route path="/compras" element={<ComprasPage />} />
           <Route path="/relatorios" element={<RelatoriosPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/configuracoes" element={<ConfiguracoesPage />} />
