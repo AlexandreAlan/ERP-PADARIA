@@ -9,6 +9,8 @@ import CaixaPage from '@/pages/Caixa/CaixaPage'
 import RelatoriosPage from '@/pages/Relatorios/RelatoriosPage'
 import AuditoriaPage from '@/pages/Auditoria/AuditoriaPage'
 import ConfiguracoesPage from '@/pages/Configuracoes/ConfiguracoesPage'
+import AdminCentralPage from '@/pages/Admin/AdminCentralPage'
+import DocsPage from '@/pages/Docs/DocsPage'
 
 export default function App() {
   return (
@@ -24,6 +26,8 @@ export default function App() {
           <Route path="/relatorios" element={<RelatoriosPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+          <Route path="/admin" element={<AdminCentralPage />} />
+          <Route path="/docs" element={<DocsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
