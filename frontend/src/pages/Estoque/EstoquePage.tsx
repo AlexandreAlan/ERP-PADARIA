@@ -82,6 +82,40 @@ const UNIDADES = ['un', 'kg']
 // Normalizes BR decimal input ("5,0" → 5, "5.000" → 5, "2,5" → 2.5)
 const parseQtd = (v: string) => parseFloat(v.replace(',', '.').replace(/\.(?=.*\.)/g, '')) || 0
 
+type StatusNivel = 'desastre' | 'critico' | 'atencao' | 'bom' | 'excelente'
+
+function calcStatus(atual: number | string, minimo: number | string): StatusNivel {
+  const a = parseFloat(String(atual))
+  const m = parseFloat(String(minimo))
+  if (a <= 0)       return 'desastre'
+  if (m <= 0)       return 'bom'
+  if (a <= m * 0.3) return 'critico'
+  if (a <= m)       return 'atencao'
+  if (a <= m * 2)   return 'bom'
+  return 'excelente'
+}
+
+const STATUS_STYLE: Record<StatusNivel, { label: string; bg: string; color: string; border: string }> = {
+  desastre:  { label: 'Desastre',  bg: '#FEF2F2', color: '#7F1D1D', border: '#FECACA' },
+  critico:   { label: 'Crítico',   bg: '#FEF2F2', color: '#DC2626', border: '#FCA5A5' },
+  atencao:   { label: 'Atenção',   bg: '#FFFBEB', color: '#B45309', border: '#FCD34D' },
+  bom:       { label: 'Bom',       bg: 'var(--clr-green-lite)', color: 'var(--clr-green)', border: 'var(--clr-border-2)' },
+  excelente: { label: 'Excelente', bg: '#ECFDF5', color: '#065F46', border: '#6EE7B7' },
+}
+
+function StatusBadge({ atual, minimo }: { atual: number | string; minimo: number | string }) {
+  const nivel = calcStatus(atual, minimo)
+  const s = STATUS_STYLE[nivel]
+  return (
+    <span
+      className="text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap"
+      style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+    >
+      {s.label}
+    </span>
+  )
+}
+
 const emptyForm = {
   nome: '',
   codigo_barras: '',
@@ -94,7 +128,9 @@ const emptyForm = {
   descricao: '',
 }
 
-function StockBar({ atual, minimo }: { atual: number; minimo: number }) {
+function StockBar({ atual: _atual, minimo: _minimo }: { atual: number | string; minimo: number | string }) {
+  const atual  = parseFloat(String(_atual))
+  const minimo = parseFloat(String(_minimo))
   const [width, setWidth] = useState(0)
 
   useEffect(() => {
@@ -104,8 +140,11 @@ function StockBar({ atual, minimo }: { atual: number; minimo: number }) {
     return () => clearTimeout(t)
   }, [atual, minimo])
 
-  const cor = atual <= 0       ? 'var(--clr-danger)'
-            : atual <= minimo  ? '#F59E0B'
+  const nivel = calcStatus(atual, minimo)
+  const cor = nivel === 'desastre' ? 'var(--clr-danger)'
+            : nivel === 'critico'  ? '#DC2626'
+            : nivel === 'atencao'  ? '#F59E0B'
+            : nivel === 'excelente'? '#059669'
             : 'var(--clr-green-med)'
 
   return (
@@ -142,6 +181,7 @@ const IconBarcode = () => (
 
 export default function EstoquePage() {
   const [busca, setBusca]           = useState('')
+  const [categoriaFiltro, setCategoriaFiltro] = useState<number | null>(null)
   const [ajuste, setAjuste]         = useState<any>(null)
   const [showForm, setShowForm]     = useState(false)
   const [editando, setEditando]     = useState<Produto | null>(null)
@@ -168,6 +208,13 @@ export default function EstoquePage() {
     () => api.get('/categorias').then(r => r.data),
     { staleTime: 60_000 }
   )
+
+  const produtosFiltrados = useMemo(() => {
+    if (!categoriaFiltro) return produtos || []
+    return (produtos || []).filter((p: Produto) => p.categoria_id === categoriaFiltro)
+  }, [produtos, categoriaFiltro])
+
+  const catTree = useMemo(() => flattenTree(buildTree(categorias || [])), [categorias])
 
   const criarCategoriaM = useMutation(
     (payload: { nome: string; parent_id: number | null }) =>
@@ -363,17 +410,39 @@ export default function EstoquePage() {
         <div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--clr-text)' }}>Estoque</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>
-            {(produtos || []).length} produto{(produtos || []).length !== 1 ? 's' : ''} cadastrado{(produtos || []).length !== 1 ? 's' : ''}
+            {produtosFiltrados.length} produto{produtosFiltrados.length !== 1 ? 's' : ''}
+            {categoriaFiltro ? ' nesta categoria' : ' cadastrado' + (produtosFiltrados.length !== 1 ? 's' : '')}
           </p>
         </div>
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-2 items-center flex-wrap justify-end">
           <input
             type="text"
             placeholder="Buscar produto..."
             value={busca}
             onChange={e => setBusca(e.target.value)}
-            className="input w-64"
+            className="input w-52"
           />
+          <select
+            value={categoriaFiltro ?? ''}
+            onChange={e => setCategoriaFiltro(e.target.value ? Number(e.target.value) : null)}
+            className="input w-48"
+          >
+            <option value="">Todas as categorias</option>
+            {catTree.map(c => (
+              <option key={c.id} value={c.id}>
+                {' '.repeat(c.nivel * 3)}{c.nivel > 0 ? '└ ' : ''}{c.nome}
+              </option>
+            ))}
+          </select>
+          {categoriaFiltro && (
+            <button
+              onClick={() => setCategoriaFiltro(null)}
+              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors"
+              style={{ background: 'var(--clr-danger-bg)', color: 'var(--clr-danger)', border: '1px solid #FCA5A5' }}
+            >
+              ✕ Limpar
+            </button>
+          )}
           <button
             onClick={() => setShowCategorias(true)}
             className="text-sm font-medium px-3 py-2 rounded-xl transition-colors whitespace-nowrap"
@@ -408,7 +477,7 @@ export default function EstoquePage() {
             </tr>
           </thead>
           <tbody>
-            {(produtos || []).map((p: Produto, i: number) => (
+            {produtosFiltrados.map((p: Produto, i: number) => (
               <tr
                 key={p.id}
                 style={{
@@ -456,21 +525,7 @@ export default function EstoquePage() {
                   <StockBar atual={p.estoque_atual} minimo={p.estoque_minimo} />
                 </td>
                 <td className="px-4 py-3 text-center">
-                  {p.estoque_baixo ? (
-                    <span
-                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                      style={{ background: 'var(--clr-danger-bg)', color: 'var(--clr-danger)', border: '1px solid #FCA5A5' }}
-                    >
-                      Baixo
-                    </span>
-                  ) : (
-                    <span
-                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                      style={{ background: 'var(--clr-green-lite)', color: 'var(--clr-green)', border: '1px solid var(--clr-border-2)' }}
-                    >
-                      OK
-                    </span>
-                  )}
+                  <StatusBadge atual={p.estoque_atual} minimo={p.estoque_minimo} />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1 justify-end">
@@ -505,10 +560,10 @@ export default function EstoquePage() {
                 </td>
               </tr>
             ))}
-            {(produtos || []).length === 0 && (
+            {produtosFiltrados.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-12 text-center text-sm" style={{ color: 'var(--clr-text-muted)' }}>
-                  Nenhum produto encontrado
+                  {categoriaFiltro ? 'Nenhum produto nesta categoria' : 'Nenhum produto encontrado'}
                 </td>
               </tr>
             )}
