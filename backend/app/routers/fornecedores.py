@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get("", response_model=list[FornecedorRead])
 async def listar(db: AsyncSession = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
-    result = await db.execute(select(Fornecedor).where(Fornecedor.ativo == True).order_by(Fornecedor.razao_social))
+    result = await db.execute(select(Fornecedor).where(Fornecedor.ativo.is_(True)).order_by(Fornecedor.razao_social))
     return result.scalars().all()
 
 
