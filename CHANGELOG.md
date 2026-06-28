@@ -11,14 +11,31 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
 ### Added
 - Módulo de Clientes com histórico de compras e programa de fidelidade
 - Módulo de Notificações in-app (sino no header, alertas automáticos de estoque)
-- Página de Docs interna do sistema
-- Página Admin Central para super_admin gerenciar instâncias
+
+---
+
+## [1.1.0] — 2026-06-28
+
+### Added
+- **Compras** — página frontend completa: listagem com KPIs, criação de pedido por fornecedor, recebimento com entrada automática no estoque
+- **Docs interna** — página de documentação do sistema para todos os perfis
+- **Admin Central** — painel do `super_admin` para gerenciar clientes e instâncias
+- **PWA** — manifest.json, favicon SVG e meta tags para instalação como app
 
 ### Changed
-- Dashboard reimplementado com KPIs expandidos (margem real, ticket médio, curva ABC)
-- Tela de Estoque com indicador visual de estoque crítico
-- Tela de Auditoria com filtros avançados e modal de detalhes
-- Sidebar atualizada com links de Admin e Docs
+- Dashboard reimplementado com KPIs expandidos (margem real, ticket médio, curva ABC, produtos abaixo do mínimo)
+- Estoque com indicador visual de alerta de estoque crítico e ordenação por urgência
+- Auditoria com filtros avançados (período, usuário, ação) e modal de detalhes
+- Sidebar atualizada com grupos Operação/Gestão/Sistema, links de Admin e Docs, e BottomNav mobile
+- Login redesenhado com nova identidade visual
+- Nova identidade visual: logos SVG, design system CSS com variáveis de cor
+
+### Fixed
+- 88 erros de lint no backend (ruff): imports não usados, comparações `== True`/`== None`, lambda como def, inline if
+- Tipagem TypeScript estrita nos callbacks `onError` do react-query
+
+### Security
+- Backend rodando como não-root (UID 10001) no Dockerfile
 
 ---
 
@@ -52,5 +69,6 @@ Projeto em desenvolvimento interno. Sem releases públicas.
 
 ---
 
-[Unreleased]: https://github.com/AlexandreAlan/ERP-PADARIA/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/AlexandreAlan/ERP-PADARIA/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/AlexandreAlan/ERP-PADARIA/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/AlexandreAlan/ERP-PADARIA/releases/tag/v1.0.0
