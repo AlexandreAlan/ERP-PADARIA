@@ -1,6 +1,6 @@
 import os
 import glob
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.dependencies.auth import require_super_admin
 from app.schemas.super_admin import SuperAdminDashboard, TenantInfo
 

@@ -1,6 +1,4 @@
-from datetime import datetime
-from typing import Optional
-from sqlalchemy import BigInteger, Integer, String, Boolean, Enum as SAEnum, DateTime
+from sqlalchemy import Integer, String, Boolean, Enum as SAEnum
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from app.database import Base
 from app.models.base import TimestampMixin, SoftDeleteMixin

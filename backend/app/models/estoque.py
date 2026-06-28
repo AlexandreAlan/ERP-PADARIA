@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from sqlalchemy import BigInteger, Integer, String, Text, Numeric, DateTime, Enum as SAEnum, ForeignKey
+from sqlalchemy import BigInteger, Integer, Text, Numeric, DateTime, Enum as SAEnum, ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from app.database import Base
 

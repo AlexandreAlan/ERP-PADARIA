@@ -2,7 +2,7 @@ import asyncio
 import uuid
 from datetime import datetime
 from sqlalchemy import select
-from app.database import engine, AsyncSessionLocal
+from app.database import AsyncSessionLocal
 from app.models.usuario import Usuario
 from app.utils.security import hash_password
 

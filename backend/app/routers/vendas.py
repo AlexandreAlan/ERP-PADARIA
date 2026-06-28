@@ -7,7 +7,6 @@ from app.database import get_db
 from app.dependencies.auth import get_current_user, require_caixa
 from app.models.usuario import Usuario
 from app.models.venda import Venda, ItemVenda
-from app.models.produto import Produto
 from app.schemas.venda import VendaCreate, VendaRead, VendaCancelamento
 from app.services import venda_service
 from app.services import escpos_service

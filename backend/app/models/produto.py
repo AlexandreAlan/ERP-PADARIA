@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Optional
 from sqlalchemy import (
-    Integer, SmallInteger, String, Text, Boolean, Numeric,
+    Integer, String, Text, Boolean, Numeric,
     Enum as SAEnum, ForeignKey, UniqueConstraint,
 )
 from sqlalchemy.orm import mapped_column, Mapped, relationship

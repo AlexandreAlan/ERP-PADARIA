@@ -8,10 +8,10 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies.auth import get_current_user, require_estoque
+from app.dependencies.auth import require_estoque
 from app.models.usuario import Usuario
 from app.models.compra import Compra, ItemCompra
-from app.models.produto import Produto, Fornecedor
+from app.models.produto import Produto
 from app.models.estoque import MovimentacaoEstoque
 
 router = APIRouter()

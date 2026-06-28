@@ -7,11 +7,10 @@ from decimal import Decimal
 from io import BytesIO
 from typing import Optional
 
-from sqlalchemy import select, and_, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.venda import Venda, ItemVenda, Pagamento
-from app.models.produto import Produto
+from app.models.venda import Venda
 from app.models.caixa import SessaoCaixa, Caixa
 from app.models.usuario import Usuario
 from app.config import get_settings
@@ -63,7 +62,7 @@ async def gerar_pdf_vendas(
     caixa_id: Optional[int] = None,
 ) -> bytes:
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.lib.units import cm
     from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer

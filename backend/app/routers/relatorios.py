@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies.auth import get_current_user, require_admin_gerente
+from app.dependencies.auth import require_admin_gerente
 from app.models.configuracao import ConfiguracaoEmpresa
 from app.models.usuario import Usuario
 from app.services import relatorio_service, email_service

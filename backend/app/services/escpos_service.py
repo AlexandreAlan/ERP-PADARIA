@@ -7,7 +7,6 @@ Compatível com impressoras 80mm (42 colunas) e 58mm (32 colunas).
 from datetime import datetime
 from decimal import Decimal
 from dataclasses import dataclass
-from typing import Optional
 from app.config import get_settings
 
 settings = get_settings()
@@ -204,7 +203,8 @@ def imprimir(dados: DadosRecibo) -> bool:
     elif tipo == "network":
         return enviar_para_impressora_network(buf)
     elif tipo == "file":
-        import tempfile, os
+        import tempfile
+        import os
         path = os.path.join(tempfile.gettempdir(), "ultimo_recibo.bin")
         with open(path, "wb") as f:
             f.write(buf)
