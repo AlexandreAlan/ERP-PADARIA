@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, date
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 
-from sqlalchemy import select, func, and_, cast, Numeric, desc, case
+from sqlalchemy import select, func, and_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.produto import Produto
@@ -140,7 +140,7 @@ async def alertas_estoque(db: AsyncSession) -> list[AlertaEstoque]:
     # Produtos abaixo do mínimo, ordenados pelo mais crítico (menor saldo relativo)
     result = await db.execute(
         select(Produto).where(
-            Produto.ativo == True,
+            Produto.ativo.is_(True),
             Produto.estoque_minimo > 0,
             Produto.estoque_atual <= Produto.estoque_minimo,
         ).order_by(Produto.estoque_atual / func.nullif(Produto.estoque_minimo, 0))
@@ -176,7 +176,7 @@ async def curva_abc(
         )
         .join(ItemVenda, ItemVenda.produto_id == Produto.id, isouter=True)
         .join(Venda, and_(Venda.id == ItemVenda.venda_id, Venda.status == "concluida", Venda.created_at.between(dt_inicio, dt_fim)), isouter=True)
-        .where(Produto.ativo == True)
+        .where(Produto.ativo.is_(True))
         .group_by(Produto.id, Produto.nome)
         .order_by(func.coalesce(func.sum(ItemVenda.total_item), 0).desc())
     )
@@ -222,7 +222,8 @@ async def calcular_comparativo(data_inicio: date, data_fim: date, db: AsyncSessi
     anterior = await calcular_kpis(inicio_anterior, fim_anterior, db)
     
     def pct_diff(v_atual, v_ant):
-        if not v_ant: return 0
+        if not v_ant:
+            return 0
         return float(((v_atual - v_ant) / v_ant * 100).quantize(TWO, ROUND_HALF_UP))
 
     return {
