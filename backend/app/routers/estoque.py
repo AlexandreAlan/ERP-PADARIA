@@ -30,7 +30,7 @@ async def alertas_estoque(
 ):
     result = await db.execute(
         select(Produto).where(
-            Produto.ativo == True,
+            Produto.ativo.is_(True),
             Produto.estoque_minimo > 0,
             Produto.estoque_atual <= Produto.estoque_minimo,
         ).order_by(Produto.estoque_atual)
@@ -59,7 +59,7 @@ async def ajuste_estoque(
         raise HTTPException(status_code=422, detail=f"Tipo inválido. Use: {tipos_validos}")
 
     result = await db.execute(
-        select(Produto).where(Produto.id == payload.produto_id, Produto.ativo == True)
+        select(Produto).where(Produto.id == payload.produto_id, Produto.ativo.is_(True))
     )
     produto = result.scalar_one_or_none()
     if not produto:
