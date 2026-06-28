@@ -107,6 +107,8 @@ async def criar_produto(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(require_estoque),
 ):
+    await _check_duplicados(db, payload.codigo_barras, payload.sku)
+
     now = datetime.utcnow()
     produto = Produto(**payload.model_dump(), created_at=now, updated_at=now)
     db.add(produto)
@@ -127,7 +129,13 @@ async def atualizar_produto(
     if not produto:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    data = payload.model_dump(exclude_unset=True)
+    novo_cb = data.get("codigo_barras") if "codigo_barras" in data and data["codigo_barras"] != produto.codigo_barras else None
+    novo_sku = data.get("sku") if "sku" in data and data["sku"] != produto.sku else None
+    if novo_cb or novo_sku:
+        await _check_duplicados(db, novo_cb, novo_sku, ignorar_id=produto.id)
+
+    for field, value in data.items():
         setattr(produto, field, value)
     produto.updated_at = datetime.utcnow()
 
@@ -196,6 +204,48 @@ async def criar_fornecedor(
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────────
+
+async def _check_duplicados(
+    db: AsyncSession,
+    codigo_barras: Optional[str],
+    sku: Optional[str],
+    ignorar_id: Optional[int] = None,
+) -> None:
+    """Pre-check antes de INSERT/UPDATE pra devolver 409 com mensagem clara
+    em vez de IntegrityError 500. A unique key cobre ativos e soft-deleted."""
+    cb = (codigo_barras or "").strip()
+    sk = (sku or "").strip()
+
+    if cb:
+        stmt = select(Produto).where(Produto.codigo_barras == cb)
+        if ignorar_id is not None:
+            stmt = stmt.where(Produto.id != ignorar_id)
+        existente = (await db.execute(stmt)).scalar_one_or_none()
+        if existente:
+            status = "ativo" if existente.ativo else "inativo (excluído)"
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Código de barras já cadastrado: '{cb}' pertence ao produto "
+                    f"#{existente.id} — \"{existente.nome}\" ({status})."
+                ),
+            )
+
+    if sk:
+        stmt = select(Produto).where(Produto.sku == sk)
+        if ignorar_id is not None:
+            stmt = stmt.where(Produto.id != ignorar_id)
+        existente = (await db.execute(stmt)).scalar_one_or_none()
+        if existente:
+            status = "ativo" if existente.ativo else "inativo (excluído)"
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"SKU já cadastrado: '{sk}' pertence ao produto "
+                    f"#{existente.id} — \"{existente.nome}\" ({status})."
+                ),
+            )
+
 
 async def _to_read(p: Produto, db: AsyncSession) -> ProdutoRead:
     cat_nome = None
