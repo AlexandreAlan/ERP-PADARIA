@@ -18,7 +18,7 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Usuario).where(Usuario.email == payload.email, Usuario.ativo == True)
+        select(Usuario).where(Usuario.email == payload.email, Usuario.ativo.is_(True))
     )
     usuario = result.scalar_one_or_none()
 
@@ -61,7 +61,7 @@ async def refresh_token(
     token_data = decode_token(payload.refresh_token, expected_type="refresh")
     usuario_id = int(token_data["sub"])
 
-    result = await db.execute(select(Usuario).where(Usuario.id == usuario_id, Usuario.ativo == True))
+    result = await db.execute(select(Usuario).where(Usuario.id == usuario_id, Usuario.ativo.is_(True)))
     usuario = result.scalar_one_or_none()
     if not usuario:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário inativo")
