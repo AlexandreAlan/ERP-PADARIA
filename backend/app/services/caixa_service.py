@@ -21,7 +21,8 @@ from app.schemas.caixa import (
 
 TWO = Decimal("0.01")
 
-_D = lambda v: v.quantize(TWO, ROUND_HALF_UP)
+def _D(v: Decimal) -> Decimal:
+    return v.quantize(TWO, ROUND_HALF_UP)
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ async def abrir_caixa(
         )
 
     caixa = (await db.execute(
-        select(Caixa).where(Caixa.id == payload.caixa_id, Caixa.ativo == True)
+        select(Caixa).where(Caixa.id == payload.caixa_id, Caixa.ativo.is_(True))
     )).scalar_one_or_none()
     if not caixa:
         raise HTTPException(status_code=404, detail="Caixa não encontrado")
