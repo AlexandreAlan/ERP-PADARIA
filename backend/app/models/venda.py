@@ -17,6 +17,7 @@ class Venda(Base, TimestampMixin):
     uuid: Mapped[str] = mapped_column(String(36), unique=True, nullable=False)
     sessao_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("sessoes_caixa.id"), nullable=False)
     usuario_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("usuarios.id"), nullable=False)
+    cliente_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("clientes.id"), nullable=True)
     status: Mapped[str] = mapped_column(
         SAEnum("rascunho", "concluida", "cancelada", native_enum=False),
         nullable=False,
@@ -37,6 +38,7 @@ class Venda(Base, TimestampMixin):
     # Relationships
     sessao: Mapped["SessaoCaixa"] = relationship(back_populates="vendas")  # noqa: F821
     usuario: Mapped["Usuario"] = relationship(back_populates="vendas", foreign_keys="[Venda.usuario_id]")  # noqa: F821
+    cliente: Mapped[Optional["Cliente"]] = relationship(back_populates="vendas")  # noqa: F821
     itens: Mapped[list["ItemVenda"]] = relationship(back_populates="venda", cascade="all, delete-orphan")
     pagamentos: Mapped[list["Pagamento"]] = relationship(back_populates="venda", cascade="all, delete-orphan")
 
