@@ -8,8 +8,7 @@ from app.dependencies.auth import get_current_user, require_estoque
 from app.models.usuario import Usuario
 from app.models.produto import Produto, Categoria, Fornecedor
 from app.schemas.produto import (
-    ProdutoCreate, ProdutoUpdate, ProdutoRead, ProdutoListItem,
-    CategoriaCreate, CategoriaRead,
+    ProdutoCreate, ProdutoUpdate, ProdutoRead, CategoriaCreate, CategoriaRead,
     FornecedorCreate, FornecedorRead,
 )
 from datetime import datetime
@@ -30,7 +29,7 @@ async def listar_produtos(
 ):
     stmt = select(Produto)
     if apenas_ativos:
-        stmt = stmt.where(Produto.ativo == True)
+        stmt = stmt.where(Produto.ativo.is_(True))
     if categoria_id:
         stmt = stmt.where(Produto.categoria_id == categoria_id)
     if q:
@@ -80,7 +79,7 @@ async def buscar_por_barcode(
 ):
     """Endpoint crítico para o PDV — deve ser < 100ms."""
     result = await db.execute(
-        select(Produto).where(Produto.codigo_barras == codigo, Produto.ativo == True)
+        select(Produto).where(Produto.codigo_barras == codigo, Produto.ativo.is_(True))
     )
     produto = result.scalar_one_or_none()
     if not produto:
@@ -163,7 +162,7 @@ async def deletar_produto(
 
 @router.get("/categorias/all", response_model=list[CategoriaRead])
 async def listar_categorias(db: AsyncSession = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
-    result = await db.execute(select(Categoria).where(Categoria.ativo == True).order_by(Categoria.nome))
+    result = await db.execute(select(Categoria).where(Categoria.ativo.is_(True)).order_by(Categoria.nome))
     return result.scalars().all()
 
 
@@ -185,7 +184,7 @@ async def criar_categoria(
 
 @router.get("/fornecedores/all", response_model=list[FornecedorRead])
 async def listar_fornecedores(db: AsyncSession = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
-    result = await db.execute(select(Fornecedor).where(Fornecedor.ativo == True).order_by(Fornecedor.razao_social))
+    result = await db.execute(select(Fornecedor).where(Fornecedor.ativo.is_(True)).order_by(Fornecedor.razao_social))
     return result.scalars().all()
 
 
