@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useEmpresaStore } from '@/store/empresaStore'
+import { useIsMobile } from '@/Mobile/Android/useIsMobile'
 
 const IconPDV = () => (
   <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
@@ -40,6 +41,11 @@ const IconConfig = () => (
     <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
 )
+const IconDocs = () => (
+  <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+  </svg>
+)
 const IconLogout = () => (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
     <path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
@@ -50,23 +56,25 @@ const NAV_GROUPS = [
   {
     label: 'Operação',
     items: [
-      { to: '/pdv',       icon: <IconPDV />,        label: 'Frente de Caixa', perfis: ['admin','gerente','caixa'] },
-      { to: '/caixa',     icon: <IconCaixa />,      label: 'Caixa',           perfis: ['admin','gerente','caixa'] },
+      { to: '/pdv',       icon: <IconPDV />,        label: 'Frente de Caixa', perfis: ['admin','gerente','caixa','super_admin'],        mobileHide: true },
+      { to: '/caixa',     icon: <IconCaixa />,      label: 'Caixa',           perfis: ['admin','gerente','caixa','super_admin'],        mobileHide: true },
     ],
   },
   {
     label: 'Gestão',
     items: [
-      { to: '/dashboard',  icon: <IconDashboard />,  label: 'Dashboard',      perfis: ['admin','gerente'] },
-      { to: '/estoque',    icon: <IconEstoque />,    label: 'Estoque',         perfis: ['admin','gerente','estoquista'] },
-      { to: '/relatorios', icon: <IconRelatorios />, label: 'Relatórios',      perfis: ['admin','gerente'] },
+      { to: '/dashboard',  icon: <IconDashboard />,  label: 'Dashboard',      perfis: ['admin','gerente','super_admin'],                mobileHide: false },
+      { to: '/estoque',    icon: <IconEstoque />,    label: 'Estoque',         perfis: ['admin','gerente','estoquista','super_admin'],   mobileHide: true },
+      { to: '/relatorios', icon: <IconRelatorios />, label: 'Relatórios',      perfis: ['admin','gerente','super_admin'],                mobileHide: false },
     ],
   },
   {
     label: 'Sistema',
     items: [
-      { to: '/auditoria',     icon: <IconAuditoria />, label: 'Auditoria',    perfis: ['admin','gerente'] },
-      { to: '/configuracoes', icon: <IconConfig />,    label: 'Configurações', perfis: ['admin'] },
+      { to: '/auditoria',     icon: <IconAuditoria />, label: 'Auditoria',    perfis: ['admin','gerente','super_admin'],                mobileHide: false },
+      { to: '/configuracoes', icon: <IconConfig />,    label: 'Configurações', perfis: ['admin','super_admin'],                         mobileHide: false },
+      { to: '/docs',          icon: <IconDocs />,      label: 'Docs',         perfis: ['admin','gerente','caixa','estoquista','super_admin'], mobileHide: true },
+      { to: '/admin',         icon: <IconDashboard />, label: 'Admin Central', perfis: ['super_admin'],                                 mobileHide: false },
     ],
   },
 ]
@@ -85,19 +93,24 @@ const perfilLabel: Record<string, string> = {
   estoquista: 'Estoquista',
 }
 
-export default function Sidebar() {
+export default function Sidebar({ onLogout }: { onLogout?: () => void }) {
   const { user, logout } = useAuthStore()
   const navigate         = useNavigate()
   const empresa          = useEmpresaStore(s => s.empresa)
+  const isMobile         = useIsMobile()
 
-  const handleLogout = () => { logout(); navigate('/login') }
+  const handleLogout = () => { 
+    logout(); 
+    if (onLogout) onLogout();
+    navigate('/login') 
+  }
   const inicial = (empresa?.nome ?? 'P').charAt(0).toUpperCase()
   const userInitials = (user?.nome ?? '?')
     .split(' ').slice(0, 2).map((n: string) => n[0]).join('').toUpperCase()
 
   return (
     <aside
-      className="w-56 flex flex-col shrink-0"
+      className="w-64 lg:w-56 h-full flex flex-col shrink-0"
       style={{
         background: 'linear-gradient(180deg, #1F3320 0%, var(--clr-sidebar) 60%)',
         borderRight: '1px solid rgba(255,255,255,0.06)',
@@ -105,41 +118,27 @@ export default function Sidebar() {
     >
       {/* Logo / Empresa */}
       <div
-        className="px-4 py-5"
+        className="px-4 py-5 flex items-center justify-between"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
       >
         <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, var(--clr-green-med), var(--clr-green))',
-              boxShadow: '0 2px 8px rgba(45,106,79,0.5)',
-            }}
-          >
+          <div className="w-9 h-9 rounded-xl shrink-0 overflow-hidden">
             {empresa?.logo_url
               ? <img src={empresa.logo_url} alt="logo" className="w-full h-full object-cover" />
               : (
-                <svg viewBox="0 0 200 200" className="w-6 h-6">
-                  {/* Thin wheat stalk above P */}
-                  <line x1="76" y1="56" x2="76" y2="26" stroke="rgba(216,243,220,0.65)" strokeWidth="4" strokeLinecap="round"/>
-                  <ellipse cx="63" cy="44" rx="7" ry="12" fill="#D8F3DC" transform="rotate(27 63 44)" opacity="0.80"/>
-                  <ellipse cx="89" cy="40" rx="7" ry="12" fill="#D8F3DC" transform="rotate(-27 89 40)" opacity="0.80"/>
-                  <ellipse cx="76" cy="26" rx="5" ry="9"  fill="#D8F3DC" opacity="0.95"/>
-                  <line x1="76" y1="26" x2="68" y2="16" stroke="#B7E4C7" strokeWidth="3" strokeLinecap="round" opacity="0.68"/>
-                  <line x1="76" y1="26" x2="84" y2="16" stroke="#B7E4C7" strokeWidth="3" strokeLinecap="round" opacity="0.68"/>
-                  {/* Bold P */}
-                  <line x1="76" y1="54" x2="76" y2="176" stroke="rgba(216,243,220,0.97)" strokeWidth="22" strokeLinecap="round"/>
-                  <path d="M 76 54 A 48 43 0 0 1 76 140" fill="none" stroke="rgba(216,243,220,0.97)" strokeWidth="22" strokeLinecap="round"/>
+                <svg viewBox="0 0 240 240" className="w-9 h-9">
+                  <rect width="240" height="240" fill="#192819"/>
+                  <path d="M 18 46 L 80 46 L 126 164 L 126 194 L 96 194 L 48 56 Z"
+                        fill="rgba(255,255,255,0.96)"/>
+                  <path d="M 114 46 L 174 46 L 208 194 L 178 194 L 144 56 L 114 76 Z"
+                        fill="#52B788"/>
                 </svg>
               )
             }
           </div>
           <div className="min-w-0">
             <div className="font-bold text-sm leading-tight truncate" style={{ color: 'rgba(230,250,230,0.95)' }}>
-              {empresa?.nome ?? 'Padaria'}
-            </div>
-            <div className="text-[10px] mt-0.5 font-semibold tracking-wide" style={{ color: 'var(--clr-accent)' }}>
-              SISTEMA PDV
+              {empresa?.nome ?? 'Nexshell'}
             </div>
           </div>
         </div>
@@ -148,7 +147,9 @@ export default function Sidebar() {
       {/* Nav com grupos */}
       <nav className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
         {NAV_GROUPS.map(group => {
-          const visible = group.items.filter(i => user && i.perfis.includes(user.perfil))
+          const visible = group.items.filter(i =>
+            user && i.perfis.includes(user.perfil) && !(isMobile && i.mobileHide)
+          )
           if (!visible.length) return null
           return (
             <div key={group.label}>
