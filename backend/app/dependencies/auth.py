@@ -16,7 +16,7 @@ async def get_current_user(
     payload = decode_token(credentials.credentials, expected_type="access")
     usuario_id = int(payload["sub"])
 
-    result = await db.execute(select(Usuario).where(Usuario.id == usuario_id, Usuario.ativo == True))
+    result = await db.execute(select(Usuario).where(Usuario.id == usuario_id, Usuario.ativo.is_(True)))
     usuario = result.scalar_one_or_none()
 
     if not usuario:
