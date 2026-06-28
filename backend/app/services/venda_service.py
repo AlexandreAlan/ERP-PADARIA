@@ -4,7 +4,7 @@ from typing import Optional
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,7 +34,7 @@ async def criar_venda(
     produto_ids = [item.produto_id for item in payload.itens]
     result = await db.execute(
         select(Produto)
-        .where(Produto.id.in_(produto_ids), Produto.ativo == True)
+        .where(Produto.id.in_(produto_ids), Produto.ativo.is_(True))
     )
     produtos_db: dict[int, Produto] = {p.id: p for p in result.scalars().all()}
 
