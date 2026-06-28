@@ -1,15 +1,13 @@
-from app.routers import (
-    auth,
-    usuarios,
-    categorias,
-    fornecedores,
-    produtos,
-    estoque,
-    caixa,
-    vendas,
-    compras,
-    dashboard,
-    relatorios,
-    auditoria,
-    configuracoes,
-)
+from app.routers import auth as auth  # noqa: F401
+from app.routers import usuarios as usuarios  # noqa: F401
+from app.routers import categorias as categorias  # noqa: F401
+from app.routers import fornecedores as fornecedores  # noqa: F401
+from app.routers import produtos as produtos  # noqa: F401
+from app.routers import estoque as estoque  # noqa: F401
+from app.routers import caixa as caixa  # noqa: F401
+from app.routers import vendas as vendas  # noqa: F401
+from app.routers import compras as compras  # noqa: F401
+from app.routers import dashboard as dashboard  # noqa: F401
+from app.routers import relatorios as relatorios  # noqa: F401
+from app.routers import auditoria as auditoria  # noqa: F401
+from app.routers import configuracoes as configuracoes  # noqa: F401
