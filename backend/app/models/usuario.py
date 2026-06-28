@@ -15,7 +15,7 @@ class Usuario(Base, TimestampMixin, SoftDeleteMixin):
     email: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
     senha_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     perfil: Mapped[str] = mapped_column(
-        SAEnum("admin", "gerente", "caixa", "estoquista", native_enum=False),
+        SAEnum("super_admin", "admin", "gerente", "caixa", "estoquista", native_enum=False),
         nullable=False,
         default="caixa",
     )
