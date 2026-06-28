@@ -146,7 +146,7 @@ function NovaCompraModal({
         qc.invalidateQueries('compras')
         onSuccess()
       },
-      onError: (err: any) => toast.error(err.response?.data?.detail ?? 'Erro ao registrar compra'),
+      onError: (err: any) => { toast.error(err.response?.data?.detail ?? 'Erro ao registrar compra') },
     }
   )
 
@@ -437,7 +437,7 @@ export default function ComprasPage() {
         toast.success('Compra recebida! Estoque atualizado.')
         qc.invalidateQueries('compras')
       },
-      onError: (err: any) => toast.error(err.response?.data?.detail ?? 'Erro ao receber compra'),
+      onError: (err: any) => { toast.error(err.response?.data?.detail ?? 'Erro ao receber compra') },
     }
   )
 
