@@ -39,12 +39,20 @@ class CurvaABCItem(BaseModel):
     classificacao: str               # A | B | C
 
 
+class MaquinetaResumo(BaseModel):
+    maquineta: str
+    credito: Decimal
+    debito: Decimal
+    total: Decimal
+
+
 class DashboardResponse(BaseModel):
     kpis: KPIResumo
     vendas_por_dia: list[VendaDiaria]
     alertas_estoque: list[AlertaEstoque]
     curva_abc: list[CurvaABCItem]
     crescimento: Optional[Dict[str, float]] = None
+    maquinetas: list[MaquinetaResumo] = []
 
 
 class FiltroRelatorio(BaseModel):
