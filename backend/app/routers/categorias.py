@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies.auth import get_current_user, require_estoque
 from app.models.usuario import Usuario
-from app.models.produto import Categoria, Produto
+from app.models.produto import Categoria
 from app.schemas.produto import CategoriaCreate, CategoriaRead, CategoriaUpdate
 
 router = APIRouter()
@@ -33,7 +33,7 @@ async def _validar_parent(db: AsyncSession, categoria_id: int | None, parent_id:
 
 @router.get("", response_model=list[CategoriaRead])
 async def listar(db: AsyncSession = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
-    result = await db.execute(select(Categoria).where(Categoria.ativo == True).order_by(Categoria.nome))
+    result = await db.execute(select(Categoria).where(Categoria.ativo.is_(True)).order_by(Categoria.nome))
     return result.scalars().all()
 
 
@@ -88,7 +88,7 @@ async def deletar(categoria_id: int, db: AsyncSession = Depends(get_db), current
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
 
     filhos = await db.execute(
-        select(func.count(Categoria.id)).where(Categoria.parent_id == categoria_id, Categoria.ativo == True)
+        select(func.count(Categoria.id)).where(Categoria.parent_id == categoria_id, Categoria.ativo.is_(True))
     )
     if filhos.scalar_one() > 0:
         raise HTTPException(status_code=400, detail="Remova ou mova as subcategorias antes de excluir esta")
