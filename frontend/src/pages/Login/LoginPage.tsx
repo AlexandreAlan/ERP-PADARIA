@@ -45,15 +45,16 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base"
-            style={{ background: 'var(--clr-green-med)', color: '#fff' }}
-          >
-            P
+          <div className="w-10 h-10 rounded-xl shrink-0 overflow-hidden">
+            <svg viewBox="0 0 240 240" className="w-10 h-10">
+              <rect width="240" height="240" fill="#192819"/>
+              <path d="M 18 46 L 80 46 L 126 164 L 126 194 L 96 194 L 48 56 Z" fill="rgba(255,255,255,0.96)"/>
+              <path d="M 114 46 L 174 46 L 208 194 L 178 194 L 144 56 L 114 76 Z" fill="#52B788"/>
+            </svg>
           </div>
           <div>
             <div className="font-bold text-sm" style={{ color: 'rgba(220,245,220,0.9)' }}>
-              Artesanal
+              Nexshell
             </div>
             <div className="text-[10px] font-medium tracking-widest" style={{ color: 'var(--clr-accent)' }}>
               SISTEMA PDV
@@ -103,7 +104,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.15)' }}>
-          v2.0 · Sistema ERP para Padarias
+          Nexshell · PDV & Gestão
         </p>
       </div>
 
@@ -113,13 +114,14 @@ export default function LoginPage() {
 
           {/* Logo mobile */}
           <div className="lg:hidden flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm"
-              style={{ background: 'var(--clr-green)', color: '#fff' }}
-            >
-              P
+            <div className="w-9 h-9 rounded-xl shrink-0 overflow-hidden">
+              <svg viewBox="0 0 240 240" className="w-9 h-9">
+                <rect width="240" height="240" fill="#192819"/>
+                <path d="M 18 46 L 80 46 L 126 164 L 126 194 L 96 194 L 48 56 Z" fill="rgba(255,255,255,0.96)"/>
+                <path d="M 114 46 L 174 46 L 208 194 L 178 194 L 144 56 L 114 76 Z" fill="#52B788"/>
+              </svg>
             </div>
-            <span className="font-bold text-[var(--clr-text)]">Artesanal PDV</span>
+            <span className="font-bold text-[var(--clr-text)]">Nexshell</span>
           </div>
 
           <div>
