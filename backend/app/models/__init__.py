@@ -7,6 +7,7 @@ from app.models.estoque import MovimentacaoEstoque
 from app.models.compra import Compra, ItemCompra
 from app.models.auditoria import LogAuditoria
 from app.models.configuracao import ConfiguracaoEmpresa
+from app.models.cliente import Cliente
 
 __all__ = [
     "Usuario",
@@ -17,4 +18,5 @@ __all__ = [
     "Compra", "ItemCompra",
     "LogAuditoria",
     "ConfiguracaoEmpresa",
+    "Cliente",
 ]
