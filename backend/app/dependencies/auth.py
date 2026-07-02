@@ -45,3 +45,7 @@ require_admin = require_perfis("admin")
 require_admin_gerente = require_perfis("admin", "gerente")
 require_caixa = require_perfis("admin", "gerente", "caixa")
 require_estoque = require_perfis("admin", "gerente", "estoquista")
+# sync_pdv: conta de dispositivo do kero-local, só usada nas rotas /api/sync/*.
+# Não incluir "sync_pdv" em nenhum outro require_* acima — é assim que se
+# garante que essa conta não enxerga mais nada do painel.
+require_sync = require_perfis("sync_pdv", "admin")
