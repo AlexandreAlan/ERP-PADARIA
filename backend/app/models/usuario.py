@@ -13,7 +13,11 @@ class Usuario(Base, TimestampMixin, SoftDeleteMixin):
     email: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
     senha_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     perfil: Mapped[str] = mapped_column(
-        SAEnum("super_admin", "admin", "gerente", "caixa", "estoquista", native_enum=False),
+        # sync_pdv: conta de dispositivo do kero-local (PDV offline) — só acessa
+        # /api/sync/*, nunca o painel. Existe pra não precisar usar login real
+        # de admin no config.ini do PDV (credencial ficava em texto puro na
+        # máquina do cliente, dando acesso total ao painel se vazasse).
+        SAEnum("super_admin", "admin", "gerente", "caixa", "estoquista", "sync_pdv", native_enum=False),
         nullable=False,
         default="caixa",
     )
