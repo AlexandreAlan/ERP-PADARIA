@@ -1,9 +1,11 @@
+import io
 import os
 import uuid
 from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -120,9 +122,6 @@ async def upload_logo(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(require_admin),
 ):
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="O arquivo deve ser uma imagem (JPEG, PNG, etc.)")
-
     content = await file.read()
     max_bytes = settings.max_upload_size_mb * 1024 * 1024
     if len(content) > max_bytes:
@@ -131,7 +130,21 @@ async def upload_logo(
             detail=f"Arquivo muito grande (máximo {settings.max_upload_size_mb} MB)",
         )
 
-    ext = os.path.splitext(file.filename or "logo")[1].lower() or ".png"
+    # Content-Type do cliente é spoofável; a extensão do nome enviado também.
+    # Só a decodificação real dos bytes com Pillow garante que é imagem de
+    # verdade, evitando upload de webshell/HTML/SVG disfarçado de imagem.
+    ALLOWED_FORMATS = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp", "GIF": ".gif"}
+    try:
+        with Image.open(io.BytesIO(content)) as img:
+            img.verify()
+        with Image.open(io.BytesIO(content)) as img:
+            fmt = img.format
+    except UnidentifiedImageError:
+        fmt = None
+    if fmt not in ALLOWED_FORMATS:
+        raise HTTPException(status_code=400, detail="O arquivo deve ser uma imagem válida (JPEG, PNG, WEBP ou GIF)")
+
+    ext = ALLOWED_FORMATS[fmt]
     filename = f"logo_{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(settings.upload_dir, filename)
 
