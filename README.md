@@ -601,6 +601,10 @@ venv\Scripts\pip.exe install -r requirements.txt --force-reinstall
 ## Segurança
 
 - **Backend em container não-root** (`USER 10001`): o processo da API não roda como root, limitando o impacto de uma eventual exploração.
+- **Sem credenciais hardcoded**: `create_super_admin.py` não tem mais senha fixa no código.
+- **Upload de logo valida o conteúdo real da imagem** (não só a extensão do arquivo).
+- **Rotas de sincronização com o PDV** protegidas por `require_sync` (perfil `sync_pdv` ou `admin`).
 
 ### Histórico de versões
+- **2026-07-02** — remove credencial hardcoded de `create_super_admin.py`; valida conteúdo real de imagem no upload de logo; adiciona perfil `sync_pdv` + dependency `require_sync` para as rotas de sincronização do PDV offline.
 - **2026-06-25** — hardening: backend passa a rodar como usuário não-root (uid 10001) no Dockerfile.
