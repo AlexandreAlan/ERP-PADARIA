@@ -11,6 +11,11 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
 ### Added
 - Módulo de Clientes com histórico de compras e programa de fidelidade
 - Módulo de Notificações in-app (sino no header, alertas automáticos de estoque)
+- Perfil `sync_pdv` no model Usuario + dependency `require_sync` (permite `sync_pdv` ou `admin`) para as rotas de sincronização com o PDV offline
+
+### Security
+- Removida credencial hardcoded de `create_super_admin.py`
+- Validação do conteúdo real da imagem (não só extensão) no upload de logo
 
 ---
 
