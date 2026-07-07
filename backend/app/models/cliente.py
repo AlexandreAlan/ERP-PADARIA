@@ -1,7 +1,7 @@
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 from typing import Optional
-from sqlalchemy import Integer, String, Numeric, Date, DateTime, ForeignKey, Text
+from sqlalchemy import Integer, String, Numeric, Date, Text
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from app.database import Base
 from app.models.base import TimestampMixin, SoftDeleteMixin
