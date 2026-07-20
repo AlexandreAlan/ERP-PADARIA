@@ -1,7 +1,32 @@
+<div align="center">
+
 # ERP Padaria — Sistema de Gestão e PDV
+
+[![CI](https://img.shields.io/github/actions/workflow/status/AlexandreAlan/ERP-PADARIA/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/AlexandreAlan/ERP-PADARIA/actions)
+[![MIT License](https://img.shields.io/badge/licença-MIT-10b981?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/AlexandreAlan/ERP-PADARIA?style=flat-square&label=release&color=10b981)](https://github.com/AlexandreAlan/ERP-PADARIA/releases)
+[![Demo](https://img.shields.io/badge/demo-ao%20vivo-10b981?style=flat-square)](https://padaria.morenadoaco.com.br)
+[![PRs Welcome](https://img.shields.io/badge/PRs-bem--vindos-10b981?style=flat-square)](CONTRIBUTING.md)
 
 Sistema completo de frente de caixa (PDV) e gestão para padarias.  
 **Stack:** FastAPI · React 18 · TypeScript · SQLite (dev) / PostgreSQL (produção, em Docker)
+
+[🚀 Demo ao vivo](https://padaria.morenadoaco.com.br) · [Issues](https://github.com/AlexandreAlan/ERP-PADARIA/issues) · [Releases](https://github.com/AlexandreAlan/ERP-PADARIA/releases)
+
+</div>
+
+---
+
+## Capturas de tela
+
+### Dashboard — KPIs financeiros, curva ABC e alertas de estoque em tempo real
+![Dashboard](docs/screenshots/01-dashboard.png)
+
+### PDV — leitor de código de barras, pagamento misto e cupom ESC/POS
+![PDV](docs/screenshots/02-pdv.png)
+
+### Estoque — controle por produto com alerta visual de estoque crítico
+![Estoque](docs/screenshots/03-estoque.png)
 
 ---
 
