@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
 
 ---
 
-## [Unreleased]
+## [1.2.0] — 2026-07-20
 
 ### Added
 - Módulo de Clientes com histórico de compras e programa de fidelidade
@@ -16,6 +16,13 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
 ### Security
 - Removida credencial hardcoded de `create_super_admin.py`
 - Validação do conteúdo real da imagem (não só extensão) no upload de logo
+- `npm audit fix` (ws, react-router)
+
+### Fixed
+- Imports não usados removidos (ruff)
+
+### Docs
+- README com badges (CI, licença, release, demo), seção de capturas de tela e link da demo ao vivo
 
 ---
 
@@ -74,6 +81,7 @@ Projeto em desenvolvimento interno. Sem releases públicas.
 
 ---
 
-[Unreleased]: https://github.com/AlexandreAlan/ERP-PADARIA/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/AlexandreAlan/ERP-PADARIA/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/AlexandreAlan/ERP-PADARIA/compare/v1.0.0...v1.2.0
 [1.1.0]: https://github.com/AlexandreAlan/ERP-PADARIA/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/AlexandreAlan/ERP-PADARIA/releases/tag/v1.0.0
