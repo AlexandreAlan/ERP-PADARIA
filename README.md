@@ -50,6 +50,16 @@ Sistema completo de frente de caixa (PDV) e gestão para padarias.
 
 ## 1. Instalação do Zero (nova máquina)
 
+> **Windows e Linux/macOS.** O sistema roda nos dois. Há duas formas de instalar:
+> - **Docker (caminho universal, funciona igual em qualquer SO)** — só precisa do Docker instalado:
+>   `docker compose up -d --build` (ver [seção 8](#8-banco-de-dados) e o cabeçalho do `docker-compose.yml`).
+> - **Bare-metal (sem Docker)** — scripts nativos por SO, equivalentes entre si:
+>   - **Windows:** `INSTALAR_SISTEMA.bat`, depois `PADARIA_ERP.bat` (iniciar) e `ATUALIZAR_SISTEMA.bat`.
+>   - **Linux/macOS:** `./instalar.sh`, depois `./iniciar.sh` e `./atualizar.sh`.
+>
+> A seção abaixo descreve o instalador Windows; para Linux/macOS bare-metal, use os scripts `.sh`
+> correspondentes (mesmos passos: venv + dependências + banco + super admin).
+
 Use este caminho quando for instalar o sistema em um computador que **nunca teve o ERP Padaria**.  
 O instalador faz tudo automaticamente: baixa o código, instala Python e Node.js, cria o banco de dados e coloca um atalho na área de trabalho.
 
