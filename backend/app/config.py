@@ -1,6 +1,13 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import computed_field
+from pydantic import computed_field, model_validator
+
+# Valores de exemplo/placeholder que NUNCA podem valer como segredo real em
+# produção (o do código e o do .env.example).
+_JWT_PLACEHOLDERS = {
+    "change-me-in-production-min-32-chars!!",
+    "troque-por-uma-chave-secreta-forte-aqui-minimo-32-chars",
+}
 
 
 class Settings(BaseSettings):
@@ -14,9 +21,13 @@ class Settings(BaseSettings):
     # App
     app_name: str = "ERP Padaria"
     app_env: str = "development"
-    app_host: str = "0.0.0.0"
+    # Bind interno do container em todas as interfaces; a exposição ao host é
+    # restrita a 127.0.0.1 pelo docker-compose (ports: "127.0.0.1:...:8000").
+    app_host: str = "0.0.0.0"  # nosec B104
     app_port: int = 8000
-    app_debug: bool = True
+    # Off por padrão: com debug ligado, o Swagger/OpenAPI fica exposto e os
+    # erros vazam stack trace. O ambiente de dev liga via APP_DEBUG=true (.env).
+    app_debug: bool = False
 
     # Database
     db_host: str = "localhost"
@@ -83,6 +94,19 @@ class Settings(BaseSettings):
     # Upload
     upload_dir: str = "./uploads"
     max_upload_size_mb: int = 5
+
+    @model_validator(mode="after")
+    def _validar_seguranca_producao(self) -> "Settings":
+        """Em produção (APP_ENV=production), recusa subir com um JWT fraco —
+        evita rodar com o segredo público do código/exemplo caso o .env falte
+        ou esteja mal configurado."""
+        if self.app_env == "production":
+            if self.jwt_secret_key in _JWT_PLACEHOLDERS or len(self.jwt_secret_key) < 32:
+                raise ValueError(
+                    "JWT_SECRET_KEY inseguro para produção: defina uma chave forte e única "
+                    "com pelo menos 32 caracteres (não use o valor de exemplo)."
+                )
+        return self
 
 
 
