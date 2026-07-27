@@ -1,0 +1,13 @@
+# Ruleset explícito e estável do Ruff — não ficar refém dos defaults, que
+# mudam entre versões (o 0.16 passou a incluir I/SIM/FURB/PL e quebrou código
+# que já era limpo). Aqui fixamos o conjunto clássico: erros de pycodestyle
+# (E4/E7/E9) + pyflakes (F). A versão do Ruff é pinada no CI (ci.yml).
+line-length = 120
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# O conftest precisa definir variáveis de ambiente ANTES de importar o app
+# (config/database leem settings no import), então os imports vêm após código.
+"tests/*" = ["E402"]
