@@ -1,0 +1,5 @@
+# Dependências só de desenvolvimento/CI (não entram na imagem de produção).
+# Instale com: pip install -r requirements.txt -r requirements-dev.txt
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+# aiosqlite e httpx já estão em requirements.txt (usados também pelos testes).
