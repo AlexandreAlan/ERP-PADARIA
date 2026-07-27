@@ -109,10 +109,46 @@ jobs:
         working-directory: frontend
         run: npm test
 
+  security:
+    name: Segurança — scan de código e dependências
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Bandit (análise estática de segurança do backend)
+        working-directory: backend
+        run: |
+          pip install bandit
+          # Falha em achados de severidade média/alta no código da aplicação.
+          bandit -r app --severity-level medium
+
+      - name: pip-audit (vulnerabilidades nas deps Python) — informativo
+        working-directory: backend
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt || echo "::warning::pip-audit encontrou avisos (não bloqueante)"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: npm audit (vulnerabilidades nas deps Node) — informativo
+        working-directory: frontend
+        run: npm audit --audit-level=high || echo "::warning::npm audit encontrou avisos (não bloqueante)"
+
   docker-build:
     name: Docker — Build Image
     runs-on: ubuntu-latest
-    needs: [backend-lint, backend-test, frontend-check, frontend-test]
+    needs: [backend-lint, backend-test, frontend-check, frontend-test, security]
     steps:
       - uses: actions/checkout@v4
 
