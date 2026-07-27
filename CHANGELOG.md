@@ -6,6 +6,23 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
 
 ---
 
+## [1.3.0] — 2026-07-27
+
+### Added
+- **Suíte de testes automatizados** (o projeto não tinha nenhum): **pytest** no backend cobrindo a lógica crítica do PDV (cálculo de venda, troco, desconto, baixa e estorno de estoque, fechamento de caixa e KPIs do dashboard, com SQLite em memória) e **vitest** no frontend (formatação de moeda e carrinho, garantindo paridade de cálculo com o backend) — 32 testes no total
+- **Suporte cross-platform Windows + Linux/macOS**: scripts `instalar.sh` / `iniciar.sh` / `atualizar.sh` equivalentes aos `.bat`, e matriz de CI Ubuntu + Windows provando a portabilidade
+
+### Changed
+- **CI com gate de testes obrigatório**: o build da imagem e a publicação no release só ocorrem se `pytest` e `vitest` passarem (antes o `docker-publish` subia a imagem no release sem rodar teste nenhum)
+- `APP_DEBUG` agora **desligado por padrão** (Swagger/OpenAPI e stack traces só com opt-in explícito)
+- Versão do app FastAPI sincronizada (estava fixa em `1.0.0`)
+
+### Security
+- `config.py` **recusa iniciar em produção** (`APP_ENV=production`) com `JWT_SECRET_KEY` fraco/de exemplo ou com menos de 32 caracteres
+- CI ganhou **scan de segurança**: `bandit` (análise estática, bloqueante) + `pip-audit` e `npm audit` (dependências, informativos)
+
+---
+
 ## [1.2.0] — 2026-07-20
 
 ### Added
