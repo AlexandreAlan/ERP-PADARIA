@@ -510,7 +510,21 @@ O cupom é salvo em `%TEMP%\ultimo_recibo.bin`. Use um visualizador ESC/POS para
 
 ## 11. Segurança em Produção
 
+> **Garantias no código:** com `APP_ENV=production`, o sistema **recusa iniciar** se o
+> `JWT_SECRET_KEY` for fraco/de exemplo ou tiver menos de 32 caracteres (ver `app/config.py`).
+> Além disso, `APP_DEBUG` agora vem **desligado por padrão** (Swagger e stack traces só aparecem se
+> você explicitamente ligar em dev). O CI roda **bandit** (análise estática de segurança, bloqueante)
+> e **pip-audit**/**npm audit** (vulnerabilidades de dependências, informativos) a cada push.
+
 ### Gerar uma chave JWT forte
+
+Linux/macOS:
+
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Windows:
 
 ```bat
 venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
