@@ -191,6 +191,30 @@ Nas próximas execuções, apenas inicia os servidores (muito mais rápido).
 | API (backend)| http://localhost:8000            |
 | Swagger docs | http://localhost:8000/api/docs   |
 
+### Testes automatizados
+
+O projeto tem suíte de testes no backend (**pytest**) e no frontend (**vitest**), rodada automaticamente no CI como *gate* — o build e a publicação da imagem só passam se todos os testes passarem.
+
+**Backend** (usa SQLite em memória, não precisa de banco rodando):
+
+```bash
+cd backend
+pip install -r requirements.txt -r requirements-dev.txt
+python -m pytest -q
+```
+
+Cobre a lógica de negócio crítica do PDV: cálculo de venda/troco/desconto, baixa e estorno de estoque, fechamento de caixa (saldo esperado, diferença, sangria/suprimento) e KPIs do dashboard (faturamento, lucro, margem, curva ABC, alertas de estoque).
+
+**Frontend**:
+
+```bash
+cd frontend
+npm install
+npm test
+```
+
+Cobre a formatação de moeda (`formatBRL`/`parseBRL`) e o carrinho do PDV (`pdvStore`: subtotal, total com desconto absoluto/percentual, merge de itens) — garantindo **paridade de cálculo com o backend**.
+
 ---
 
 ## 3. Inicialização Manual (passo a passo)
