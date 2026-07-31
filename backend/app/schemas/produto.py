@@ -7,6 +7,7 @@ class ProdutoCreate(BaseModel):
     codigo_barras: Optional[str] = None
     sku: Optional[str] = None
     nome: str
+    fabricante: Optional[str] = None
     descricao: Optional[str] = None
     categoria_id: int
     fornecedor_id: Optional[int] = None
@@ -37,6 +38,7 @@ class ProdutoUpdate(BaseModel):
     codigo_barras: Optional[str] = None
     sku: Optional[str] = None
     nome: Optional[str] = None
+    fabricante: Optional[str] = None
     descricao: Optional[str] = None
     categoria_id: Optional[int] = None
     fornecedor_id: Optional[int] = None
@@ -54,6 +56,7 @@ class ProdutoRead(BaseModel):
     codigo_barras: Optional[str]
     sku: Optional[str]
     nome: str
+    fabricante: Optional[str] = None
     descricao: Optional[str]
     categoria_id: int
     categoria_nome: Optional[str] = None
