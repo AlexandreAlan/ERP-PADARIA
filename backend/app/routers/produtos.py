@@ -1,5 +1,7 @@
+from dataclasses import asdict
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi.responses import Response
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +13,7 @@ from app.schemas.produto import (
     ProdutoCreate, ProdutoUpdate, ProdutoRead, CategoriaCreate, CategoriaRead,
     FornecedorCreate, FornecedorRead,
 )
+from app.services.produto_excel_service import gerar_excel_produtos, importar_excel_produtos
 from datetime import datetime
 
 router = APIRouter()
@@ -57,6 +60,7 @@ async def listar_produtos(
     return [
         ProdutoRead(
             id=p.id, codigo_barras=p.codigo_barras, sku=p.sku, nome=p.nome,
+            fabricante=p.fabricante,
             descricao=p.descricao, categoria_id=p.categoria_id,
             categoria_nome=cats.get(p.categoria_id),
             fornecedor_id=p.fornecedor_id,
@@ -156,6 +160,46 @@ async def deletar_produto(
     produto.ativo = False
     produto.deleted_at = datetime.utcnow()
     await db.flush()
+
+
+# ── Excel (exportar/importar catálogo) ───────────────────────────────────────────
+
+@router.get("/excel/exportar")
+async def exportar_excel(
+    apenas_ativos: bool = True,
+    db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(require_estoque),
+):
+    conteudo = await gerar_excel_produtos(db, apenas_ativos)
+    nome_arquivo = f"produtos_{datetime.utcnow():%Y-%m-%d}.xlsx"
+    return Response(
+        content=conteudo,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{nome_arquivo}"'},
+    )
+
+
+@router.post("/excel/importar")
+async def importar_excel(
+    confirmar: bool = False,
+    arquivo: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(require_estoque),
+):
+    if not arquivo.filename.lower().endswith((".xlsx", ".xlsm")):
+        raise HTTPException(status_code=422, detail="Envie um arquivo .xlsx (o mesmo modelo do exportar).")
+
+    conteudo = await arquivo.read()
+    resumo = await importar_excel_produtos(db, conteudo, confirmar=confirmar, usuario_id=current_user.id)
+
+    return {
+        "total_linhas": resumo.total_linhas,
+        "criados": resumo.criados,
+        "atualizados": resumo.atualizados,
+        "com_erro": resumo.com_erro,
+        "aplicado": resumo.aplicado,
+        "detalhes": [asdict(d) for d in resumo.detalhes],
+    }
 
 
 # ── Categorias ──────────────────────────────────────────────────────────────────
@@ -260,6 +304,7 @@ async def _to_read(p: Produto, db: AsyncSession) -> ProdutoRead:
 
     return ProdutoRead(
         id=p.id, codigo_barras=p.codigo_barras, sku=p.sku, nome=p.nome,
+        fabricante=p.fabricante,
         descricao=p.descricao, categoria_id=p.categoria_id, categoria_nome=cat_nome,
         fornecedor_id=p.fornecedor_id, fornecedor_nome=forn_nome,
         unidade_medida=p.unidade_medida, preco_custo=p.preco_custo,
