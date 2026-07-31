@@ -56,6 +56,7 @@ class Produto(Base, TimestampMixin, SoftDeleteMixin):
     codigo_barras: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, unique=True)
     sku: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, unique=True)
     nome: Mapped[str] = mapped_column(String(150), nullable=False)
+    fabricante: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     descricao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     categoria_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("categorias.id"), nullable=False
