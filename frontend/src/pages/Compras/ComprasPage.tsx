@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import toast from 'react-hot-toast'
 import { api } from '@/config/api'
 import { formatBRL } from '@/utils/currency'
+import ImportarXmlModal from './ImportarXmlModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +77,13 @@ const IconX = () => (
 const IconChevron = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+  </svg>
+)
+const IconXml = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+    <path d="M14 2v6h6" />
+    <path d="M12 18v-6m0 0l-2.5 2.5M12 12l2.5 2.5" />
   </svg>
 )
 const IconPackage = () => (
@@ -414,6 +422,7 @@ function CompraDetalhes({ compra, onReceber, isRecebing }: { compra: CompraOut; 
 
 export default function ComprasPage() {
   const [showModal, setShowModal]         = useState(false)
+  const [showXmlModal, setShowXmlModal]   = useState(false)
   const [expandedId, setExpandedId]       = useState<number | null>(null)
   const [filtroStatus, setFiltroStatus]   = useState<string>('todos')
   const qc = useQueryClient()
@@ -462,14 +471,24 @@ export default function ComprasPage() {
             <p className="text-xs" style={{ color: 'var(--clr-text-muted)' }}>Registro de pedidos e recebimento de mercadoria</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-          style={{ background: 'var(--clr-primary)' }}
-        >
-          <IconPlus />
-          Nova Compra
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowXmlModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border hover:bg-gray-50"
+            style={{ borderColor: 'var(--clr-border)', color: 'var(--clr-text)' }}
+          >
+            <IconXml />
+            Importar XML da NF-e
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+            style={{ background: 'var(--clr-primary)' }}
+          >
+            <IconPlus />
+            Nova Compra
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}
@@ -558,6 +577,12 @@ export default function ComprasPage() {
           produtos={produtos}
           onClose={() => setShowModal(false)}
           onSuccess={() => setShowModal(false)}
+        />
+      )}
+      {showXmlModal && (
+        <ImportarXmlModal
+          onClose={() => setShowXmlModal(false)}
+          onSuccess={() => setShowXmlModal(false)}
         />
       )}
     </div>
