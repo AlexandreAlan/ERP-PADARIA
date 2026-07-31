@@ -6,6 +6,23 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
 
 ---
 
+## [Não lançado]
+
+### Added
+- **Fabricante/marca** no cadastro de produto (além do fornecedor/distribuidor)
+- **Importação do XML da NF-e** em Compras: lê fornecedor e itens do XML que o
+  fornecedor manda junto da mercadoria, casa produto existente por código de
+  barras/SKU, mostra uma prévia pra conferir antes de lançar a compra
+- **Exportar/Importar Excel** do catálogo de produtos, com atualização em lote
+  (casa por id/código de barras/SKU); a quantidade em estoque nunca é alterada
+  pela importação — só por compra ou ajuste, preservando a auditoria
+- Migração automática e idempotente de colunas novas em produção (o projeto não
+  usa Alembic; até então uma coluna nova exigia intervenção manual no banco)
+
+### Security
+- XML da NF-e é lido com `defusedxml` (proteção contra XML bomb/XXE), não o
+  `xml.etree.ElementTree` puro
+
 ## [1.3.0] — 2026-07-27
 
 ### Added
