@@ -3,11 +3,13 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import toast from 'react-hot-toast'
 import { api } from '@/config/api'
 import { formatBRL } from '@/utils/currency'
+import ImportarExcelModal from './ImportarExcelModal'
 
 interface Produto {
   id: number
   codigo_barras?: string
   nome: string
+  fabricante?: string
   categoria_id: number
   categoria_nome?: string
   preco_custo: number
@@ -119,6 +121,7 @@ function StatusBadge({ atual, minimo }: { atual: number | string; minimo: number
 const emptyForm = {
   nome: '',
   codigo_barras: '',
+  fabricante: '',
   categoria_id: '',
   preco_venda: '',
   preco_custo: '',
@@ -194,6 +197,27 @@ export default function EstoquePage() {
   const [movendoCat, setMovendoCat]         = useState<number | null>(null)
   const [editandoCat, setEditandoCat]       = useState<number | null>(null)
   const [editNomeCat, setEditNomeCat]       = useState('')
+  const [showImportarExcel, setShowImportarExcel] = useState(false)
+  const [exportando, setExportando]         = useState(false)
+
+  async function exportarExcel() {
+    setExportando(true)
+    try {
+      const response = await api.get('/produtos/excel/exportar', { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `produtos_${new Date().toISOString().slice(0, 10)}.xlsx`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error('Erro ao gerar o Excel')
+    } finally {
+      setExportando(false)
+    }
+  }
   const barcodeInputRef             = useRef<HTMLInputElement>(null)
   const queryClient                 = useQueryClient()
 
@@ -345,6 +369,7 @@ export default function EstoquePage() {
     setForm({
       nome: p.nome,
       codigo_barras: p.codigo_barras || '',
+      fabricante: p.fabricante || '',
       categoria_id: String(p.categoria_id),
       preco_venda: String(p.preco_venda),
       preco_custo: String(p.preco_custo),
@@ -371,6 +396,7 @@ export default function EstoquePage() {
     const payload: any = {
       nome: form.nome.trim(),
       codigo_barras: form.codigo_barras.trim() || undefined,
+      fabricante: form.fabricante.trim() || undefined,
       categoria_id: parseInt(form.categoria_id),
       preco_venda: parseFloat(form.preco_venda),
       preco_custo: parseFloat(form.preco_custo) || 0,
@@ -452,6 +478,25 @@ export default function EstoquePage() {
           >
             Categorias
           </button>
+          <button
+            onClick={exportarExcel}
+            disabled={exportando}
+            className="text-sm font-medium px-3 py-2 rounded-xl transition-colors whitespace-nowrap disabled:opacity-50"
+            style={{ color: 'var(--clr-text)', background: 'var(--clr-surface)', border: '1px solid var(--clr-border)' }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-green-pale)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-surface)'}
+          >
+            {exportando ? 'Gerando...' : 'Exportar Excel'}
+          </button>
+          <button
+            onClick={() => setShowImportarExcel(true)}
+            className="text-sm font-medium px-3 py-2 rounded-xl transition-colors whitespace-nowrap"
+            style={{ color: 'var(--clr-text)', background: 'var(--clr-surface)', border: '1px solid var(--clr-border)' }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-green-pale)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--clr-surface)'}
+          >
+            Importar Excel
+          </button>
           <button onClick={abrirNovo} className="btn-action whitespace-nowrap">
             + Novo Produto
           </button>
@@ -490,6 +535,9 @@ export default function EstoquePage() {
               >
                 <td className="px-4 py-3">
                   <div className="font-semibold" style={{ color: 'var(--clr-text)' }}>{p.nome}</div>
+                  {p.fabricante && (
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>{p.fabricante}</div>
+                  )}
                   <div className="text-xs font-mono mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>
                     {p.codigo_barras ? (
                       <span className="flex items-center gap-1">
@@ -626,6 +674,17 @@ export default function EstoquePage() {
                   onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
                   className="input"
                   placeholder="Ex: Pão Francês"
+                />
+              </div>
+
+              <div>
+                <label className="label">Fabricante / Marca</label>
+                <input
+                  type="text"
+                  value={form.fabricante}
+                  onChange={e => setForm(f => ({ ...f, fabricante: e.target.value }))}
+                  className="input"
+                  placeholder="Ex: Nestlé, Piraquê..."
                 />
               </div>
 
@@ -1109,6 +1168,13 @@ export default function EstoquePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showImportarExcel && (
+        <ImportarExcelModal
+          onClose={() => setShowImportarExcel(false)}
+          onSuccess={() => setShowImportarExcel(false)}
+        />
       )}
     </div>
   )
