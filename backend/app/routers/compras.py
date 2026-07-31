@@ -1,7 +1,8 @@
+import re
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
@@ -11,8 +12,13 @@ from app.database import get_db
 from app.dependencies.auth import require_estoque
 from app.models.usuario import Usuario
 from app.models.compra import Compra, ItemCompra
-from app.models.produto import Produto
+from app.models.produto import Produto, Fornecedor
 from app.models.estoque import MovimentacaoEstoque
+from app.schemas.produto import ProdutoCreate
+from app.routers.produtos import criar_produto
+from app.services.nfe_xml_service import parse_nfe_xml, NFeInvalidaError
+
+_TAMANHO_MAXIMO_XML = 5 * 1024 * 1024  # 5 MB — XML de NF-e real nunca chega perto disso
 
 router = APIRouter()
 
@@ -177,3 +183,180 @@ async def receber_compra(
     await db.flush()
 
     return {"mensagem": "Compra recebida e estoque atualizado"}
+
+
+# ── Importação de XML da NF-e ────────────────────────────────────────────────
+# Fluxo em duas etapas: prévia (só leitura, mostra o que casou/não casou pro
+# usuário conferir) e confirmar (aí sim grava). Depois de confirmado, a
+# compra nasce com status "confirmado" — o passo de receber (acima) continua
+# sendo o mesmo, então o estoque só entra quando o usuário confirmar o
+# recebimento físico da mercadoria, igual ao lançamento manual.
+
+class ItemNFePreviewOut(BaseModel):
+    codigo: str
+    ean: Optional[str]
+    descricao: str
+    unidade_nfe: str
+    unidade_sugerida: str
+    quantidade: Decimal
+    valor_unitario: Decimal
+    valor_total: Decimal
+    produto_id: Optional[int]
+    produto_nome: Optional[str]
+    encontrado: bool
+
+
+class FornecedorPreviewOut(BaseModel):
+    cnpj: str
+    razao_social: str
+    id: Optional[int]
+    existe: bool
+
+
+class NFePreviewOut(BaseModel):
+    chave_acesso: Optional[str]
+    numero: str
+    serie: str
+    fornecedor: FornecedorPreviewOut
+    itens: list[ItemNFePreviewOut]
+
+
+async def _buscar_fornecedor_por_cnpj(db: AsyncSession, cnpj_formatado: str) -> Optional[Fornecedor]:
+    forn = (await db.execute(select(Fornecedor).where(Fornecedor.cnpj == cnpj_formatado))).scalar_one_or_none()
+    if forn is not None:
+        return forn
+    # Fallback: cadastros antigos podem ter o CNPJ sem formatação — compara só os dígitos.
+    digitos = re.sub(r"\D", "", cnpj_formatado)
+    if not digitos:
+        return None
+    todos = (await db.execute(select(Fornecedor))).scalars().all()
+    return next((f for f in todos if re.sub(r"\D", "", f.cnpj or "") == digitos), None)
+
+
+@router.post("/xml/previa", response_model=NFePreviewOut)
+async def previa_importacao_xml(
+    arquivo: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(require_estoque),
+):
+    """Só leitura: lê o XML e mostra o que casaria, sem gravar nada."""
+    if not arquivo.filename or not arquivo.filename.lower().endswith(".xml"):
+        raise HTTPException(status_code=422, detail="Envie o arquivo .xml da NF-e (não o PDF/DANFE).")
+
+    conteudo = await arquivo.read()
+    if len(conteudo) > _TAMANHO_MAXIMO_XML:
+        raise HTTPException(status_code=422, detail="Arquivo grande demais para ser uma NF-e (máx. 5 MB).")
+
+    try:
+        dados = parse_nfe_xml(conteudo)
+    except NFeInvalidaError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    fornecedor = await _buscar_fornecedor_por_cnpj(db, dados.emitente_cnpj)
+
+    itens_out = []
+    for item in dados.itens:
+        produto = None
+        if item.ean:
+            produto = (await db.execute(
+                select(Produto).where(Produto.codigo_barras == item.ean)
+            )).scalar_one_or_none()
+        if produto is None and item.codigo:
+            produto = (await db.execute(select(Produto).where(Produto.sku == item.codigo))).scalar_one_or_none()
+
+        itens_out.append(ItemNFePreviewOut(
+            codigo=item.codigo, ean=item.ean, descricao=item.descricao,
+            unidade_nfe=item.unidade_nfe, unidade_sugerida=item.unidade_sugerida,
+            quantidade=item.quantidade, valor_unitario=item.valor_unitario, valor_total=item.valor_total,
+            produto_id=produto.id if produto else None,
+            produto_nome=produto.nome if produto else None,
+            encontrado=produto is not None,
+        ))
+
+    return NFePreviewOut(
+        chave_acesso=dados.chave_acesso, numero=dados.numero, serie=dados.serie,
+        fornecedor=FornecedorPreviewOut(
+            cnpj=dados.emitente_cnpj, razao_social=dados.emitente_nome,
+            id=fornecedor.id if fornecedor else None, existe=fornecedor is not None,
+        ),
+        itens=itens_out,
+    )
+
+
+class ItemXmlConfirmarIn(BaseModel):
+    descricao: str
+    ean: Optional[str] = None
+    sku: Optional[str] = None
+    quantidade: Decimal
+    custo_unit: Decimal
+    unidade_medida: str = "un"
+    produto_id: Optional[int] = None    # produto já existente -> só usa
+    categoria_id: Optional[int] = None  # produto novo -> obrigatório
+
+
+class ConfirmarXmlRequest(BaseModel):
+    fornecedor_id: Optional[int] = None       # fornecedor já cadastrado
+    fornecedor_cnpj: Optional[str] = None     # fornecedor novo -> cria
+    fornecedor_nome: Optional[str] = None
+    nota_fiscal: Optional[str] = None
+    itens: list[ItemXmlConfirmarIn]
+
+
+@router.post("/xml/confirmar", status_code=201)
+async def confirmar_importacao_xml(
+    payload: ConfirmarXmlRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(require_estoque),
+):
+    """Grava de fato: cria fornecedor/produtos que faltarem e lança a compra
+    (mesmo formato de `criar_compra`) já pronta para o recebimento confirmar
+    o estoque."""
+    if payload.fornecedor_id:
+        fornecedor = (await db.execute(
+            select(Fornecedor).where(Fornecedor.id == payload.fornecedor_id)
+        )).scalar_one_or_none()
+        if not fornecedor:
+            raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
+    else:
+        if not payload.fornecedor_cnpj or not payload.fornecedor_nome:
+            raise HTTPException(
+                status_code=422,
+                detail="Informe fornecedor_id (já cadastrado) ou fornecedor_cnpj + fornecedor_nome (novo).",
+            )
+        fornecedor = await _buscar_fornecedor_por_cnpj(db, payload.fornecedor_cnpj)
+        if fornecedor is None:
+            now = datetime.utcnow()
+            fornecedor = Fornecedor(
+                razao_social=payload.fornecedor_nome, cnpj=payload.fornecedor_cnpj,
+                ativo=True, created_at=now, updated_at=now,
+            )
+            db.add(fornecedor)
+            await db.flush()
+
+    itens_compra: list[ItemCompraIn] = []
+    for item in payload.itens:
+        if item.produto_id:
+            produto_id = item.produto_id
+        else:
+            if not item.categoria_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"O item \"{item.descricao}\" é um produto novo: informe categoria_id.",
+                )
+            novo = await criar_produto(
+                ProdutoCreate(
+                    codigo_barras=item.ean, sku=item.sku, nome=item.descricao,
+                    categoria_id=item.categoria_id, fornecedor_id=fornecedor.id,
+                    unidade_medida=item.unidade_medida,
+                    preco_custo=item.custo_unit,
+                    preco_venda=item.custo_unit,  # provisório — ajuste a margem depois em Produtos
+                ),
+                db, current_user,
+            )
+            produto_id = novo.id
+        itens_compra.append(ItemCompraIn(produto_id=produto_id, quantidade=item.quantidade, custo_unit=item.custo_unit))
+
+    return await criar_compra(
+        CompraCreate(fornecedor_id=fornecedor.id, itens=itens_compra, nota_fiscal=payload.nota_fiscal),
+        db, current_user,
+    )
