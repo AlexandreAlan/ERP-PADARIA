@@ -35,3 +35,4 @@ python-dateutil>=2.9.0
 # Utilities
 python-slugify>=8.0.4
 pillow>=11.1.0
+defusedxml>=0.7.1
