@@ -314,10 +314,16 @@ Criadas automaticamente pelo `seed_dev.py`:
 
 ### Estoque
 
-- Cadastro completo de produtos: código de barras, foto, preços, unidade de medida
+- Cadastro completo de produtos: código de barras, SKU, fabricante/marca, foto, preços, unidade de medida
 - Ajuste manual (entrada, saída, perda, inventário)
 - Alerta de estoque mínimo no dashboard
 - Gestão de categorias e fornecedores
+- **Exportar/Importar Excel**: baixa o catálogo inteiro numa planilha (id, código de
+  barras, SKU, fabricante, categoria, fornecedor, preços, estoque mínimo/máximo) e
+  importa de volta com atualização em lote — casa por id, código de barras ou SKU;
+  cria produto novo quando não casa. Sempre com uma prévia antes de aplicar. A
+  quantidade em estoque **não** é alterada por aqui (só por compra ou ajuste), pra
+  manter o rastro de auditoria intacto.
 
 ### Controle de Caixa
 
@@ -328,8 +334,12 @@ Criadas automaticamente pelo `seed_dev.py`:
 
 ### Compras
 
-- Registro de ordens de compra por fornecedor
-- Entrada automática no estoque ao confirmar recebimento
+- Registro manual de ordens de compra por fornecedor (cupom, sem nota, etc.)
+- **Importação do XML da NF-e**: sobe o arquivo XML que o fornecedor manda junto da
+  mercadoria — o sistema lê fornecedor, itens, código de barras e custo, mostra uma
+  prévia (o que já existe casado por código de barras/SKU e o que é produto novo,
+  pedindo a categoria) e, ao confirmar, lança a compra pronta para o recebimento
+- Entrada automática no estoque ao confirmar recebimento (manual ou vindo do XML)
 
 ### Dashboard
 
