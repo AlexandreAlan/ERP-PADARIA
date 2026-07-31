@@ -6,6 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from app.config import get_settings
+from app.database import engine
+from app.migrations import aplicar_migracoes_aditivas
 from app.routers import (
     auth,
     usuarios,
@@ -37,6 +39,7 @@ _SERVE_FRONTEND = os.path.isdir(_FRONTEND_DIST)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await aplicar_migracoes_aditivas(engine)
     yield
 
 
