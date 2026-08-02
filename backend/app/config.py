@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Off por padrão: com debug ligado, o Swagger/OpenAPI fica exposto e os
     # erros vazam stack trace. O ambiente de dev liga via APP_DEBUG=true (.env).
     app_debug: bool = False
+    # Fuso do negócio, usado pra converter "hoje"/período dos relatórios pro
+    # UTC ingênuo que o banco guarda (datetime.utcnow()). Só muda se a padaria
+    # não for em horário de Brasília (ex.: Manaus/Amazonas -> America/Manaus).
+    report_timezone: str = "America/Sao_Paulo"
 
     # Database
     db_host: str = "localhost"
