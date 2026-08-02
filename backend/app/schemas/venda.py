@@ -93,6 +93,7 @@ class PagamentoRead(BaseModel):
 
 class VendaCreate(BaseModel):
     sessao_id: int
+    cliente_id: Optional[int] = None
     itens: list[ItemVendaCreate]
     pagamentos: list[PagamentoCreate]
     desconto_valor: Decimal = Decimal("0.00")
