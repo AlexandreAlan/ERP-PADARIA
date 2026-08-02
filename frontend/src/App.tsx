@@ -13,6 +13,7 @@ import AdminCentralPage from '@/pages/Admin/AdminCentralPage'
 import DocsPage from '@/pages/Docs/DocsPage'
 import ComprasPage from '@/pages/Compras/ComprasPage'
 import ClientesPage from '@/pages/Clientes/ClientesPage'
+import FinanceiroPage from '@/pages/Financeiro/FinanceiroPage'
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/compras" element={<ComprasPage />} />
           <Route path="/clientes" element={<ClientesPage />} />
           <Route path="/relatorios" element={<RelatoriosPage />} />
+          <Route path="/financeiro" element={<FinanceiroPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
           <Route path="/configuracoes" element={<ConfiguracoesPage />} />
           <Route path="/admin" element={<AdminCentralPage />} />
