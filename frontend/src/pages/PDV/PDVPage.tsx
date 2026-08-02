@@ -4,16 +4,34 @@ import toast from 'react-hot-toast'
 import { api } from '@/config/api'
 import { usePDVStore } from '@/store/pdvStore'
 import { useAuthStore } from '@/store/authStore'
+import { useEmpresaStore } from '@/store/empresaStore'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { formatBRL } from '@/utils/currency'
 import CartPanel from './CartPanel'
 import PaymentModal from './PaymentModal'
+import ClienteModal from './ClienteModal'
 import SessaoGuard from './SessaoGuard'
 import { useIsMobile } from '@/Mobile/Android/useIsMobile'
+
+const COR = {
+  bg: '#0a0a0b', surface: '#141416', surface2: '#1a1a1c', surface3: '#222224',
+  border: 'rgba(255,255,255,0.08)', text: '#f5f5f5', muted: '#9ca3af', mutedDim: '#6b7280',
+  verde: '#22c55e', azul: '#3b82f6', vermelho: '#ef4444', laranja: '#f59e0b', roxo: '#8b5cf6',
+}
 
 const IconBarcode = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
     <path d="M3.75 4.5v15m4.5-15v15m3-15v15m3-15v15m4.5-15v15m3-15v15" />
+  </svg>
+)
+const IconCliente = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+  </svg>
+)
+const IconDesconto = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 )
 const IconCart = () => (
@@ -25,72 +43,96 @@ const IconCart = () => (
 
 function Relogio() {
   const [agora, setAgora] = useState(new Date())
-  useEffect(() => {
-    const t = setInterval(() => setAgora(new Date()), 1000)
-    return () => clearInterval(t)
-  }, [])
-  return (
-    <span className="font-mono text-sm" style={{ color: 'var(--clr-text-muted)' }}>
-      {agora.toLocaleDateString('pt-BR')} — {agora.toLocaleTimeString('pt-BR')}
-    </span>
-  )
+  useEffect(() => { const t = setInterval(() => setAgora(new Date()), 1000); return () => clearInterval(t) }, [])
+  return <span className="font-mono text-sm" style={{ color: COR.muted }}>{agora.toLocaleTimeString('pt-BR')}</span>
 }
 
 function BarraDeStatus() {
   const { user } = useAuthStore()
+  const empresa = useEmpresaStore(s => s.empresa)
   const { data: sessao } = useQuery('sessao-ativa', () => api.get('/caixa/sessao-ativa').then(r => r.data), { retry: false })
 
   return (
-    <div
-      className="flex items-center justify-between px-4 py-1.5 text-xs shrink-0"
-      style={{ background: 'var(--clr-sidebar)', color: 'rgba(230,240,230,0.85)' }}
-    >
-      <div className="flex items-center gap-4">
-        <span><strong style={{ color: '#fff' }}>{user?.nome}</strong></span>
+    <div className="flex items-center justify-between px-4 py-2 shrink-0" style={{ background: COR.surface, borderBottom: `1px solid ${COR.border}` }}>
+      <div className="flex items-center gap-2.5">
+        <span className="font-bold text-sm" style={{ color: COR.text }}>{empresa?.nome ?? 'PDV'}</span>
+        <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.15)', color: COR.verde }}>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: COR.verde }} />
+          Online
+        </span>
+      </div>
+      <div className="flex items-center gap-4 text-xs" style={{ color: COR.muted }}>
+        <span>{user?.nome}</span>
         {sessao && (
           <>
-            <span>Caixa: <strong style={{ color: '#fff' }}>{sessao.caixa_nome}</strong></span>
+            <span>Caixa: <strong style={{ color: COR.text }}>{sessao.caixa_nome}</strong></span>
             <span>Aberto às {new Date(sessao.opened_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
           </>
         )}
+        <Relogio />
       </div>
-      <span className="font-mono">
-        {new Date().toLocaleDateString('pt-BR')} — <Relogio />
-      </span>
     </div>
   )
 }
 
-function BarraDeAtalhos({ onDesconto }: { onDesconto: () => void }) {
+function BarraDeAtalhos() {
   const atalhos = [
     { tecla: 'F2', label: 'Buscar' },
     { tecla: 'F4', label: 'Finalizar venda' },
-    { tecla: 'F9', label: 'Desconto', onClick: onDesconto },
+    { tecla: 'F9', label: 'Desconto' },
     { tecla: 'Del', label: 'Remove item' },
     { tecla: 'Esc', label: 'Cancela venda' },
   ]
   return (
-    <div
-      className="flex items-center gap-1 px-3 py-1.5 shrink-0 overflow-x-auto no-scrollbar"
-      style={{ background: 'var(--clr-bg)', borderTop: '1px solid var(--clr-border)' }}
-    >
+    <div className="flex items-center gap-1 px-3 py-1.5 shrink-0 overflow-x-auto no-scrollbar" style={{ background: COR.bg, borderTop: `1px solid ${COR.border}` }}>
       {atalhos.map(a => (
-        <button
-          key={a.tecla}
-          onClick={a.onClick}
-          className="flex items-center gap-1.5 px-2 py-1 rounded text-xs whitespace-nowrap"
-          style={{ color: 'var(--clr-text-muted)' }}
-        >
-          <span
-            className="font-mono font-bold px-1.5 py-0.5 rounded text-[11px]"
-            style={{ background: 'var(--clr-surface)', border: '1px solid var(--clr-border)', color: 'var(--clr-text)' }}
-          >
+        <span key={a.tecla} className="flex items-center gap-1.5 px-2 py-1 rounded text-xs whitespace-nowrap" style={{ color: COR.mutedDim }}>
+          <span className="font-mono font-bold px-1.5 py-0.5 rounded text-[11px]" style={{ background: COR.surface3, border: `1px solid ${COR.border}`, color: COR.muted }}>
             {a.tecla}
           </span>
           {a.label}
-        </button>
+        </span>
       ))}
     </div>
+  )
+}
+
+function AcaoRapida({ icone, label, cor, valor, onClick }: { icone: React.ReactNode; label: string; cor: string; valor?: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex items-center gap-2 px-3 py-2 rounded-xl transition-colors shrink-0" style={{ background: COR.surface2, border: `1px solid ${COR.border}` }}>
+      <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: `${cor}22`, color: cor }}>{icone}</span>
+      <span className="text-xs font-semibold text-left" style={{ color: COR.text }}>
+        {label}
+        {valor && <span className="block font-normal" style={{ color: COR.muted }}>{valor}</span>}
+      </span>
+    </button>
+  )
+}
+
+function ProdutoCard({ p, onClick }: { p: any; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-xl text-left flex flex-col overflow-hidden transition-colors min-h-[128px]"
+      style={{ background: COR.surface2, border: `1px solid ${COR.border}` }}
+      onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = COR.verde}
+      onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = COR.border}
+    >
+      {p.imagem_url ? (
+        <img src={p.imagem_url} alt="" className="w-full h-16 object-cover" />
+      ) : (
+        <div className="w-full h-16 flex items-center justify-center text-xl font-bold" style={{ background: COR.surface3, color: COR.mutedDim }}>
+          {p.nome.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div className="p-2 flex-1 flex flex-col justify-between">
+        <span className="text-xs font-semibold line-clamp-2 leading-snug" style={{ color: COR.text }}>{p.nome}</span>
+        <div className="flex items-center justify-between mt-1">
+          <span className="font-mono font-bold text-sm" style={{ color: COR.verde }}>{formatBRL(p.preco_venda)}</span>
+          <span className="text-[9px] uppercase font-bold" style={{ color: COR.mutedDim }}>{p.unidade_medida}</span>
+        </div>
+      </div>
+    </button>
   )
 }
 
@@ -98,6 +140,7 @@ export default function PDVPage() {
   const isMobile = useIsMobile()
   const [showCartMobile, setShowCartMobile] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showClienteModal, setShowClienteModal] = useState(false)
   const [showDesconto, setShowDesconto] = useState(false)
   const [descontoInput, setDescontoInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -122,39 +165,24 @@ export default function PDVPage() {
 
   const addProduto = useCallback((p: any) => {
     store.addItem({
-      produto_id: p.id,
-      nome: p.nome,
-      preco_unit: parseFloat(p.preco_venda),
-      custo_unit: parseFloat(p.preco_custo ?? 0),
-      quantidade: 1,
-      desconto_unit: 0,
-      unidade_medida: p.unidade_medida,
+      produto_id: p.id, nome: p.nome, preco_unit: parseFloat(p.preco_venda),
+      custo_unit: parseFloat(p.preco_custo ?? 0), quantidade: 1, desconto_unit: 0, unidade_medida: p.unidade_medida,
     })
   }, [store])
 
-  // ── Leitor de código de barras: bipou, entra direto na venda ──────────────
   const handleScan = useCallback(async (codigo: string) => {
     const local = todosProdutos.find((p: any) => p.codigo_barras === codigo)
-    if (local) {
-      addProduto(local)
-      toast.success(local.nome, { position: 'bottom-center', duration: 1200 })
-      setSearchTerm('')
-      return
-    }
+    if (local) { addProduto(local); toast.success(local.nome, { position: 'bottom-center', duration: 1200 }); setSearchTerm(''); return }
     try {
       const { data } = await api.get(`/produtos/barcode/${codigo}`)
-      addProduto(data)
-      toast.success(data.nome, { position: 'bottom-center', duration: 1200 })
-      setSearchTerm('')
+      addProduto(data); toast.success(data.nome, { position: 'bottom-center', duration: 1200 }); setSearchTerm('')
     } catch {
-      toast.error(`Código "${codigo}" não encontrado`)
-      setSearchTerm(codigo)
+      toast.error(`Código "${codigo}" não encontrado`); setSearchTerm(codigo)
     }
   }, [todosProdutos, addProduto])
 
   useBarcodeScanner({ onScan: handleScan })
 
-  // ── Atalhos de teclado ─────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'F2') { e.preventDefault(); buscaRef.current?.focus(); return }
@@ -169,9 +197,7 @@ export default function PDVPage() {
       const foco = document.activeElement as HTMLElement | null
       const digitando = foco?.tagName === 'INPUT' || foco?.tagName === 'TEXTAREA'
       if ((e.key === 'Delete' || e.key === 'Backspace') && !digitando && itemSelecionado !== null) {
-        e.preventDefault()
-        store.removeItem(itemSelecionado)
-        setItemSelecionado(null)
+        e.preventDefault(); store.removeItem(itemSelecionado); setItemSelecionado(null)
       }
     }
     window.addEventListener('keydown', handler)
@@ -186,9 +212,7 @@ export default function PDVPage() {
         queryClient.invalidateQueries(['estoque-alertas'])
         toast.success('Venda concluída!')
       },
-      onError: (err: any) => {
-        toast.error(err.response?.data?.detail || 'Erro na venda')
-      }
+      onError: (err: any) => { toast.error(err.response?.data?.detail || 'Erro na venda') },
     }
   )
 
@@ -196,46 +220,42 @@ export default function PDVPage() {
   const total = store.total()
 
   const aplicarDesconto = () => {
-    const v = parseFloat(descontoInput.replace(',', '.')) || 0
-    store.setDesconto(v)
-    setShowDesconto(false)
-    setDescontoInput('')
+    store.setDesconto(parseFloat(descontoInput.replace(',', '.')) || 0)
+    setShowDesconto(false); setDescontoInput('')
   }
 
   return (
     <SessaoGuard>
-      <div className="flex flex-col h-full w-full" style={{ background: 'var(--clr-bg)' }}>
+      <div className="flex flex-col h-full w-full" style={{ background: COR.bg }}>
         {!isMobile && <BarraDeStatus />}
 
         <div className="flex flex-1 overflow-hidden">
-          {/* Catálogo */}
           <div className="flex-1 flex flex-col min-w-0">
-            <div className="p-3 shrink-0 space-y-2" style={{ background: 'var(--clr-surface)', borderBottom: '1px solid var(--clr-border)' }}>
+            <div className="p-3 shrink-0 space-y-2.5" style={{ borderBottom: `1px solid ${COR.border}` }}>
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--clr-text-muted)' }}><IconBarcode /></div>
+                <div className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: COR.muted }}><IconBarcode /></div>
                 <input
                   ref={buscaRef}
                   type="text"
                   placeholder="Bipe o código de barras ou digite o nome do produto — F2"
-                  className="input pl-9 w-full"
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: COR.surface2, border: `1px solid ${COR.border}`, color: COR.text }}
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && filteredProdutos.length === 1) {
-                      addProduto(filteredProdutos[0]); setSearchTerm('')
-                    }
-                  }}
+                  onKeyDown={e => { if (e.key === 'Enter' && filteredProdutos.length === 1) { addProduto(filteredProdutos[0]); setSearchTerm('') } }}
                 />
+              </div>
+
+              <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                <AcaoRapida icone={<IconCliente />} cor={COR.azul} label={store.clienteNome ?? 'Cliente'} onClick={() => setShowClienteModal(true)} />
+                <AcaoRapida icone={<IconDesconto />} cor={COR.verde} label={store.desconto > 0 ? 'Desconto' : 'Desconto'} valor={store.desconto > 0 ? `−${formatBRL(store.desconto)}` : undefined} onClick={() => setShowDesconto(v => !v)} />
               </div>
 
               <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
                 <button
                   onClick={() => setCategoriaSel(null)}
-                  className="px-3 py-1 rounded text-xs font-semibold whitespace-nowrap transition-colors"
-                  style={!categoriaSel
-                    ? { background: 'var(--clr-primary, var(--clr-green))', color: 'white' }
-                    : { background: 'var(--clr-bg)', color: 'var(--clr-text-muted)', border: '1px solid var(--clr-border)' }
-                  }
+                  className="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors"
+                  style={!categoriaSel ? { background: COR.verde, color: '#0a0a0a' } : { background: COR.surface2, color: COR.muted, border: `1px solid ${COR.border}` }}
                 >
                   Tudo
                 </button>
@@ -243,11 +263,8 @@ export default function PDVPage() {
                   <button
                     key={cat.id}
                     onClick={() => setCategoriaSel(cat.id)}
-                    className="px-3 py-1 rounded text-xs font-semibold whitespace-nowrap transition-colors"
-                    style={categoriaSel === cat.id
-                      ? { background: 'var(--clr-primary, var(--clr-green))', color: 'white' }
-                      : { background: 'var(--clr-bg)', color: 'var(--clr-text-muted)', border: '1px solid var(--clr-border)' }
-                    }
+                    className="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors"
+                    style={categoriaSel === cat.id ? { background: COR.verde, color: '#0a0a0a' } : { background: COR.surface2, color: COR.muted, border: `1px solid ${COR.border}` }}
                   >
                     {cat.nome}
                   </button>
@@ -256,64 +273,52 @@ export default function PDVPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-3">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5">
                 {filteredProdutos.map((p: any) => (
-                  <button
-                    key={p.id}
-                    onClick={() => addProduto(p)}
-                    className="p-3 rounded-lg text-left flex flex-col justify-between min-h-[92px] transition-colors"
-                    style={{ background: 'var(--clr-surface)', border: '1px solid var(--clr-border)' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--clr-green)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--clr-border)'}
-                  >
-                    <span className="text-xs font-semibold line-clamp-3 leading-snug" style={{ color: 'var(--clr-text)' }}>{p.nome}</span>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="font-mono font-bold text-sm" style={{ color: 'var(--clr-green)' }}>{formatBRL(p.preco_venda)}</span>
-                      <span className="text-[10px] uppercase font-bold" style={{ color: 'var(--clr-text-muted)' }}>{p.unidade_medida}</span>
-                    </div>
-                  </button>
+                  <ProdutoCard key={p.id} p={p} onClick={() => addProduto(p)} />
                 ))}
                 {filteredProdutos.length === 0 && (
-                  <p className="col-span-full text-sm text-center py-8" style={{ color: 'var(--clr-text-muted)' }}>
-                    Nenhum produto encontrado
-                  </p>
+                  <p className="col-span-full text-sm text-center py-8" style={{ color: COR.muted }}>Nenhum produto encontrado</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Venda em andamento */}
           <div className={`
-            ${isMobile ? 'fixed inset-0 z-[200]' : 'w-[460px] flex flex-col'}
+            ${isMobile ? 'fixed inset-0 z-[200]' : 'w-[440px] flex flex-col'}
             ${isMobile && !showCartMobile ? 'pointer-events-none' : 'pointer-events-auto'}
-          `} style={!isMobile ? { background: 'var(--clr-surface)', borderLeft: '1px solid var(--clr-border)' } : undefined}>
+          `} style={!isMobile ? { background: COR.surface, borderLeft: `1px solid ${COR.border}` } : undefined}>
             {isMobile && (
-              <div
-                className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${showCartMobile ? 'opacity-100' : 'opacity-0'}`}
-                onClick={() => setShowCartMobile(false)}
-              />
+              <div className={`absolute inset-0 bg-black/60 transition-opacity duration-200 ${showCartMobile ? 'opacity-100' : 'opacity-0'}`} onClick={() => setShowCartMobile(false)} />
             )}
 
             <div className={`
               ${isMobile ? 'absolute bottom-0 left-0 right-0 h-[85vh] rounded-t-2xl shadow-2xl' : 'h-full'}
               flex flex-col overflow-hidden transition-transform duration-200
               ${isMobile && !showCartMobile ? 'translate-y-full' : 'translate-y-0'}
-            `} style={{ background: 'var(--clr-surface)' }}>
-              <div className="px-4 py-3 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--clr-border)' }}>
-                <h2 className="text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>Venda em andamento</h2>
+            `} style={{ background: COR.surface }}>
+              <div className="px-4 py-3 flex items-center justify-between shrink-0" style={{ borderBottom: `1px solid ${COR.border}` }}>
+                <h2 className="text-xs font-bold uppercase tracking-wide" style={{ color: COR.muted }}>Venda em andamento</h2>
                 {isMobile && (
-                  <button onClick={() => setShowCartMobile(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--clr-bg)' }}>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" strokeWidth={2.5} strokeLinecap="round" /></svg>
+                  <button onClick={() => setShowCartMobile(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: COR.surface3 }}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: COR.muted }}><path d="M19 9l-7 7-7-7" strokeWidth={2.5} strokeLinecap="round" /></svg>
                   </button>
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4">
+              {store.clienteNome && (
+                <div className="px-4 py-2 flex items-center justify-between text-xs shrink-0" style={{ borderBottom: `1px solid ${COR.border}`, color: COR.azul }}>
+                  <span>Cliente: <strong>{store.clienteNome}</strong></span>
+                  <button onClick={() => store.setCliente(null, null)} style={{ color: COR.mutedDim }}>remover</button>
+                </div>
+              )}
+
+              <div className="flex-1 overflow-y-auto p-3">
                 <CartPanel selecionado={itemSelecionado} onSelecionar={setItemSelecionado} />
               </div>
 
-              <div className="p-4 space-y-2 shrink-0 safe-area-bottom" style={{ borderTop: '1px solid var(--clr-border)', background: 'var(--clr-bg)' }}>
-                <div className="flex justify-between text-xs" style={{ color: 'var(--clr-text-muted)' }}>
+              <div className="p-4 space-y-2 shrink-0 safe-area-bottom" style={{ borderTop: `1px solid ${COR.border}`, background: COR.bg }}>
+                <div className="flex justify-between text-xs" style={{ color: COR.muted }}>
                   <span>Subtotal</span>
                   <span className="font-mono">{formatBRL(subtotal)}</span>
                 </div>
@@ -323,32 +328,30 @@ export default function PDVPage() {
                     <input
                       type="number" step="0.01" autoFocus
                       placeholder="Desconto em R$"
-                      className="input flex-1 h-9 text-sm"
+                      className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
+                      style={{ background: COR.surface2, border: `1px solid ${COR.border}`, color: COR.text }}
                       value={descontoInput}
                       onChange={e => setDescontoInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') aplicarDesconto(); if (e.key === 'Escape') setShowDesconto(false) }}
                     />
-                    <button onClick={aplicarDesconto} className="btn-action h-9 px-3 text-sm">OK</button>
+                    <button onClick={aplicarDesconto} className="px-3 py-2 rounded-lg text-sm font-bold" style={{ background: COR.verde, color: '#0a0a0a' }}>OK</button>
                   </div>
                 ) : store.desconto > 0 ? (
-                  <div className="flex justify-between text-xs" style={{ color: 'var(--clr-danger)' }}>
+                  <div className="flex justify-between text-xs" style={{ color: COR.vermelho }}>
                     <span>Desconto (F9 pra alterar)</span>
                     <span className="font-mono">−{formatBRL(store.desconto)}</span>
                   </div>
-                ) : (
-                  <button onClick={() => setShowDesconto(true)} className="text-xs font-semibold" style={{ color: 'var(--clr-text-muted)' }}>
-                    + Desconto (F9)
-                  </button>
-                )}
+                ) : null}
 
                 <div className="flex justify-between items-center pt-1">
-                  <span className="font-bold uppercase text-xs tracking-wide" style={{ color: 'var(--clr-text)' }}>Total</span>
-                  <span className="text-2xl font-mono font-black" style={{ color: 'var(--clr-green)' }}>{formatBRL(total)}</span>
+                  <span className="font-bold uppercase text-xs tracking-wide" style={{ color: COR.text }}>Total</span>
+                  <span className="text-2xl font-mono font-black" style={{ color: COR.verde }}>{formatBRL(total)}</span>
                 </div>
                 <button
                   disabled={store.cart.length === 0}
                   onClick={() => { setShowCartMobile(false); setShowPaymentModal(true) }}
-                  className="btn-action w-full py-3 text-sm"
+                  className="w-full py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-40"
+                  style={{ background: COR.verde, color: '#0a0a0a' }}
                 >
                   Finalizar venda (F4)
                 </button>
@@ -360,18 +363,22 @@ export default function PDVPage() {
             <button
               onClick={() => setShowCartMobile(true)}
               className="fixed bottom-20 right-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-[110]"
-              style={{ background: 'var(--clr-green)', color: 'white' }}
+              style={{ background: COR.verde, color: '#0a0a0a' }}
             >
               <IconCart />
-              <span className="absolute -top-1 -right-1 text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'var(--clr-danger)' }}>
+              <span className="absolute -top-1 -right-1 text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center" style={{ background: COR.vermelho }}>
                 {store.cart.length}
               </span>
             </button>
           )}
         </div>
 
-        {!isMobile && <BarraDeAtalhos onDesconto={() => setShowDesconto(v => !v)} />}
+        {!isMobile && <BarraDeAtalhos />}
       </div>
+
+      {showClienteModal && (
+        <ClienteModal onClose={() => setShowClienteModal(false)} onSelect={(id, nome) => store.setCliente(id, nome)} />
+      )}
 
       {showPaymentModal && (
         <PaymentModal
@@ -379,18 +386,12 @@ export default function PDVPage() {
           isLoading={createVendaMutation.isLoading}
           onCancel={() => setShowPaymentModal(false)}
           onConfirm={(pagamentos) => {
-            if (!store.sessaoId) {
-              toast.error('Nenhuma sessão de caixa aberta')
-              return
-            }
+            if (!store.sessaoId) { toast.error('Nenhuma sessão de caixa aberta'); return }
             createVendaMutation.mutate(
               {
                 sessao_id: store.sessaoId,
-                itens: store.cart.map((item) => ({
-                  produto_id: item.produto_id,
-                  quantidade: item.quantidade,
-                  desconto_unit: item.desconto_unit,
-                })),
+                cliente_id: store.clienteId,
+                itens: store.cart.map((item) => ({ produto_id: item.produto_id, quantidade: item.quantidade, desconto_unit: item.desconto_unit })),
                 pagamentos,
                 desconto_valor: store.desconto,
                 desconto_pct: store.descontoPct,
