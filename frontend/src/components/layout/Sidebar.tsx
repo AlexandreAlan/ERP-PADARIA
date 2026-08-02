@@ -40,6 +40,11 @@ const IconRelatorios = () => (
     <path d="M6 18.75h12" />
   </svg>
 )
+const IconFinanceiro = () => (
+  <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3M3.75 6h16.5a1.5 1.5 0 011.5 1.5v9a1.5 1.5 0 01-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5v-9a1.5 1.5 0 011.5-1.5z" />
+  </svg>
+)
 const IconAuditoria = () => (
   <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
@@ -78,6 +83,7 @@ const NAV_GROUPS = [
       { to: '/compras',    icon: <IconCompras />,    label: 'Compras',         perfis: ['admin','gerente','estoquista','super_admin'],   mobileHide: true },
       { to: '/clientes',   icon: <IconClientes />,   label: 'Clientes',         perfis: ['admin','gerente','caixa','super_admin'],           mobileHide: false },
       { to: '/relatorios', icon: <IconRelatorios />, label: 'Relatórios',      perfis: ['admin','gerente','super_admin'],                mobileHide: false },
+      { to: '/financeiro', icon: <IconFinanceiro />, label: 'Financeiro',     perfis: ['admin','gerente','super_admin'],                mobileHide: false },
     ],
   },
   {
