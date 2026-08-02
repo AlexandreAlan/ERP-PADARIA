@@ -22,6 +22,7 @@ from app.models.produto import Produto, Categoria
 from app.models.usuario import Usuario
 from app.models.caixa import SessaoCaixa, Caixa
 from app.models.cliente import Cliente
+from app.utils.tempo import limites_do_dia_local
 
 
 class RelatorioDinamicoError(Exception):
@@ -114,10 +115,14 @@ async def gerar_relatorio(
         .order_by(*colunas_dim)
     )
 
-    if filtros.data_inicio:
-        stmt = stmt.where(func.date(Venda.created_at) >= filtros.data_inicio)
-    if filtros.data_fim:
-        stmt = stmt.where(func.date(Venda.created_at) <= filtros.data_fim)
+    if filtros.data_inicio or filtros.data_fim:
+        dt_inicio, dt_fim = limites_do_dia_local(
+            filtros.data_inicio or date(1900, 1, 1), filtros.data_fim or date(2999, 12, 31),
+        )
+        if filtros.data_inicio:
+            stmt = stmt.where(Venda.created_at >= dt_inicio)
+        if filtros.data_fim:
+            stmt = stmt.where(Venda.created_at <= dt_fim)
     if filtros.categoria_id:
         stmt = stmt.where(Categoria.id == filtros.categoria_id)
     if filtros.produto_id:
