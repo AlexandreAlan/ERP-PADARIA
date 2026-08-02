@@ -79,7 +79,18 @@ class Pagamento(Base):
         nullable=False,
         default="aprovado",
     )
+    # Só fazem sentido para cartao_credito/cartao_debito — usados pra calcular o
+    # valor líquido esperado (contratos de cartão) e conciliar com o extrato.
+    operadora_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("operadoras_cartao.id"), nullable=True
+    )
+    bandeira: Mapped[Optional[str]] = mapped_column(
+        SAEnum("visa", "master", "elo", "amex", "hipercard", "outra", native_enum=False), nullable=True
+    )
+    parcelas: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    operadora: Mapped[Optional["OperadoraCartao"]] = relationship()  # noqa: F821
 
     # Relationships
     venda: Mapped["Venda"] = relationship(back_populates="pagamentos")
