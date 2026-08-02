@@ -27,10 +27,10 @@ const IconPix = () => (
 )
 
 const FORMAS = [
-  { key: 'dinheiro',       label: 'Dinheiro', icon: <IconDinheiro />, cor: '#166534', bg: '#F0FDF4', border: '#A7F3D0' },
-  { key: 'cartao_credito', label: 'Crédito',  icon: <IconCartao />,  cor: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
-  { key: 'cartao_debito',  label: 'Débito',   icon: <IconCartao />,  cor: '#6D28D9', bg: '#F5F3FF', border: '#DDD6FE' },
-  { key: 'pix',            label: 'PIX',      icon: <IconPix />,     cor: '#0369A1', bg: '#F0F9FF', border: '#BAE6FD' },
+  { key: 'dinheiro',       label: 'Dinheiro', icon: <IconDinheiro />, cor: '#22c55e' },
+  { key: 'cartao_credito', label: 'Crédito',  icon: <IconCartao />,  cor: '#3b82f6' },
+  { key: 'cartao_debito',  label: 'Débito',   icon: <IconCartao />,  cor: '#8b5cf6' },
+  { key: 'pix',            label: 'PIX',      icon: <IconPix />,     cor: '#06b6d4' },
 ]
 
 const MAQUINETAS = ['1', '2', '3', '4']
@@ -59,7 +59,6 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
     return tmp > total ? parseFloat((tmp - total).toFixed(2)) : 0
   }, [valorAtual, totalPago, total, formaAtual])
 
-  // Preenche restante e reseta maquineta ao trocar forma de pagamento
   useEffect(() => {
     if (restante > 0) setValorAtual(restante.toFixed(2))
     else setValorAtual('')
@@ -71,10 +70,7 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
   const addPagamento = () => {
     const valor = parseFloat(valorAtual)
     if (!valor || valor <= 0 || !maquinetaOk) return
-    setPagamentos(prev => [
-      ...prev,
-      { forma: formaAtual, valor, nsu: maquineta ?? undefined },
-    ])
+    setPagamentos(prev => [...prev, { forma: formaAtual, valor, nsu: maquineta ?? undefined }])
     setValorAtual('')
     setMaquineta(null)
   }
@@ -103,37 +99,18 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
       : valorNumerico >= total
   ) && maquinetaOk
 
-  const formaInfo = FORMAS.find(f => f.key === formaAtual)!
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(25,40,25,0.55)', backdropFilter: 'blur(3px)' }}
-    >
-      <div
-        className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
-        style={{ border: '1px solid var(--clr-border)' }}
-      >
-        {/* Header */}
-        <div
-          className="px-6 py-5"
-          style={{ background: 'var(--clr-sidebar)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
-        >
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'rgba(180,220,180,0.5)' }}>
-            Total a pagar
-          </p>
-          <div className="font-mono font-bold text-4xl" style={{ color: '#fff', letterSpacing: '-0.02em' }}>
-            {formatBRL(total)}
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+      <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: '#1a1a1c', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="px-6 py-5" style={{ background: '#141416', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#6b7280' }}>Total a pagar</p>
+          <div className="font-mono font-bold text-4xl" style={{ color: '#22c55e', letterSpacing: '-0.02em' }}>{formatBRL(total)}</div>
           {totalPago > 0 && totalPago < total && (
-            <div className="mt-2 text-sm font-semibold" style={{ color: 'var(--clr-accent)' }}>
-              Restante: {formatBRL(restante)}
-            </div>
+            <div className="mt-2 text-sm font-semibold" style={{ color: '#f59e0b' }}>Restante: {formatBRL(restante)}</div>
           )}
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Formas de pagamento */}
           <div className="grid grid-cols-4 gap-2">
             {FORMAS.map(f => {
               const sel = formaAtual === f.key
@@ -143,9 +120,9 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
                   onClick={() => setFormaAtual(f.key)}
                   className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all"
                   style={{
-                    border: `2px solid ${sel ? f.cor : 'var(--clr-border)'}`,
-                    background: sel ? f.bg : '#FAFCFA',
-                    color: sel ? f.cor : 'var(--clr-text-muted)',
+                    border: `2px solid ${sel ? f.cor : 'rgba(255,255,255,0.08)'}`,
+                    background: sel ? `${f.cor}1a` : '#222224',
+                    color: sel ? f.cor : '#8b8b8f',
                   }}
                 >
                   {f.icon}
@@ -155,23 +132,22 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
             })}
           </div>
 
-          {/* Seletor de maquineta (crédito / débito) */}
           {isCard(formaAtual) && (
             <div>
-              <p className="label mb-2">Selecione a maquineta</p>
+              <p className="text-xs font-semibold mb-2" style={{ color: '#9ca3af' }}>Selecione a maquineta</p>
               <div className="grid grid-cols-4 gap-2">
                 {MAQUINETAS.map(n => {
                   const sel = maquineta === n
-                  const cor = formaInfo.cor
+                  const cor = FORMAS.find(f => f.key === formaAtual)!.cor
                   return (
                     <button
                       key={n}
                       onClick={() => setMaquineta(n)}
                       className="h-11 rounded-xl font-bold text-base transition-all"
                       style={{
-                        border: `2px solid ${sel ? cor : 'var(--clr-border)'}`,
-                        background: sel ? formaInfo.bg : '#FAFCFA',
-                        color: sel ? cor : 'var(--clr-text-muted)',
+                        border: `2px solid ${sel ? cor : 'rgba(255,255,255,0.08)'}`,
+                        background: sel ? `${cor}1a` : '#222224',
+                        color: sel ? cor : '#8b8b8f',
                       }}
                     >
                       {n}
@@ -179,22 +155,18 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
                   )
                 })}
               </div>
-              {!maquineta && (
-                <p className="text-[11px] mt-1.5" style={{ color: 'var(--clr-danger)' }}>
-                  Selecione a maquineta para continuar
-                </p>
-              )}
+              {!maquineta && <p className="text-[11px] mt-1.5" style={{ color: '#ef4444' }}>Selecione a maquineta para continuar</p>}
             </div>
           )}
 
-          {/* Valor recebido */}
           <div>
-            <label className="label">Valor recebido (R$)</label>
+            <label className="text-xs font-semibold" style={{ color: '#9ca3af' }}>Valor recebido (R$)</label>
             <input
               type="number"
               value={valorAtual}
               onChange={e => setValorAtual(e.target.value)}
-              className="input text-center font-mono font-bold text-2xl h-16"
+              className="w-full mt-1 px-3 py-3 rounded-xl text-center font-mono font-bold text-2xl outline-none"
+              style={{ background: '#222224', border: '1px solid rgba(255,255,255,0.08)', color: '#f5f5f5' }}
               placeholder={restante > 0 ? restante.toFixed(2) : total.toFixed(2)}
               autoFocus
               onKeyDown={e => { if (e.key === 'Enter') handleConfirm() }}
@@ -203,33 +175,23 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
             />
           </div>
 
-          {/* Troco */}
           {troco > 0 && (
-            <div
-              className="flex items-center justify-between rounded-xl px-4 py-3"
-              style={{ background: '#F0FDF4', border: '1px solid #A7F3D0' }}
-            >
-              <span className="text-sm font-semibold" style={{ color: '#166534' }}>Troco a devolver</span>
-              <span className="font-mono font-bold text-lg" style={{ color: '#166534' }}>{formatBRL(troco)}</span>
+            <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}>
+              <span className="text-sm font-semibold" style={{ color: '#22c55e' }}>Troco a devolver</span>
+              <span className="font-mono font-bold text-lg" style={{ color: '#22c55e' }}>{formatBRL(troco)}</span>
             </div>
           )}
 
-          {/* Pagamentos parciais */}
           {pagamentos.length > 0 && (
             <div className="space-y-1.5 pt-1">
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--clr-text-muted)' }}>
-                Pagamentos adicionados
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9ca3af' }}>Pagamentos adicionados</p>
               {pagamentos.map((pg, i) => (
-                <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm"
-                  style={{ background: 'var(--clr-green-pale)', border: '1px solid var(--clr-border)' }}>
-                  <span style={{ color: 'var(--clr-text-med)' }}>{labelPagamento(pg)}</span>
+                <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm" style={{ background: '#222224', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span style={{ color: '#d1d5db' }}>{labelPagamento(pg)}</span>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-semibold" style={{ color: 'var(--clr-text)' }}>{formatBRL(pg.valor)}</span>
-                    <button onClick={() => removePagamento(i)} style={{ color: 'var(--clr-danger)' }}>
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M6 18L18 6M6 6l12 12"/>
-                      </svg>
+                    <span className="font-mono font-semibold" style={{ color: '#f5f5f5' }}>{formatBRL(pg.valor)}</span>
+                    <button onClick={() => removePagamento(i)} style={{ color: '#ef4444' }}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                   </div>
                 </div>
@@ -237,29 +199,31 @@ export default function PaymentModal({ total, onConfirm, onCancel, isLoading }: 
             </div>
           )}
 
-          {/* Botão pagamento parcial */}
           {restante > 0 && pagamentos.length > 0 && (
             <button
               onClick={addPagamento}
               disabled={!maquinetaOk}
               className="w-full py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40"
-              style={{ border: '1px solid var(--clr-border)', color: 'var(--clr-text-med)', background: 'var(--clr-green-pale)' }}
+              style={{ border: '1px solid rgba(255,255,255,0.08)', color: '#d1d5db', background: '#222224' }}
             >
               + Adicionar pagamento parcial
             </button>
           )}
         </div>
 
-        {/* Footer */}
-        <div
-          className="flex gap-3 px-6 py-4"
-          style={{ borderTop: '1px solid var(--clr-border)', background: 'var(--clr-bg)' }}
-        >
-          <button onClick={onCancel} className="btn-bakery flex-1 text-sm">Voltar</button>
+        <div className="flex gap-3 px-6 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: '#141416' }}>
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-xl text-sm font-semibold transition-colors"
+            style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#d1d5db' }}
+          >
+            Voltar
+          </button>
           <button
             onClick={handleConfirm}
             disabled={!podeConcluir || isLoading}
-            className="btn-action flex-[2] py-3 text-base"
+            className="flex-[2] py-3 rounded-xl text-base font-bold transition-colors disabled:opacity-40"
+            style={{ background: '#22c55e', color: '#0a0a0a' }}
           >
             {isLoading ? 'Processando...' : 'Confirmar Venda'}
           </button>
