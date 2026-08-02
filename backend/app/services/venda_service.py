@@ -93,6 +93,7 @@ async def criar_venda(
         uuid=str(uuid.uuid4()),
         sessao_id=payload.sessao_id,
         usuario_id=usuario_id,
+        cliente_id=payload.cliente_id,
         status="concluida",
         subtotal=subtotal,
         desconto_valor=desconto_valor,
