@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { format, subDays } from 'date-fns'
 import toast from 'react-hot-toast'
 import { api } from '@/config/api'
+import RelatorioDinamico from './RelatorioDinamico'
 
 const IconPDF = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -92,6 +93,7 @@ export default function RelatoriosPage() {
   const [dataFim,    setDataFim]    = useState(format(new Date(), 'yyyy-MM-dd'))
   const [loading,    setLoading]    = useState<string | null>(null)
   const [showEmail,  setShowEmail]  = useState(false)
+  const [aba, setAba] = useState<'vendas' | 'dinamico'>('vendas')
 
   const download = async (tipo: 'pdf' | 'excel') => {
     const ext       = tipo === 'pdf' ? 'pdf' : 'xlsx'
@@ -126,6 +128,28 @@ export default function RelatoriosPage() {
         <p className="text-sm mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>Exporte seus dados de vendas em PDF ou planilha</p>
       </div>
 
+      <div className="flex gap-2 border-b" style={{ borderColor: 'var(--clr-border)' }}>
+        {[
+          { id: 'vendas' as const, label: 'Relatório de Vendas' },
+          { id: 'dinamico' as const, label: 'Relatório Dinâmico' },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setAba(t.id)}
+            className="px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors"
+            style={aba === t.id
+              ? { borderColor: 'var(--clr-primary)', color: 'var(--clr-primary)' }
+              : { borderColor: 'transparent', color: 'var(--clr-text-muted)' }
+            }
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {aba === 'dinamico' && <RelatorioDinamico />}
+
+      {aba === 'vendas' && (
       <div className="max-w-lg bakery-card space-y-5">
         <div>
           <h2 className="font-semibold text-base mb-4" style={{ color: 'var(--clr-text)' }}>Relatório de Vendas</h2>
@@ -173,6 +197,7 @@ export default function RelatoriosPage() {
           Os arquivos gerados incluem todas as vendas do período selecionado.
         </p>
       </div>
+      )}
 
       {showEmail && (
         <EmailModal dataInicio={dataInicio} dataFim={dataFim} onClose={() => setShowEmail(false)} />
