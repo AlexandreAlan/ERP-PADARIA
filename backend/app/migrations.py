@@ -12,10 +12,24 @@ existente; nunca reescreve o histórico.
 from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from app.database import Base
+import app.models  # noqa: F401 — garante que todo model esteja registrado no Base.metadata
+
 # (tabela, coluna, tipo DDL) — sintaxe de ADD COLUMN compatível com Postgres e SQLite
 _COLUNAS_ADITIVAS: list[tuple[str, str, str]] = [
     ("produtos", "fabricante", "VARCHAR(100)"),
+    ("pagamentos", "operadora_id", "INTEGER"),
+    ("pagamentos", "bandeira", "VARCHAR(20)"),
+    ("pagamentos", "parcelas", "INTEGER NOT NULL DEFAULT 1"),
 ]
+
+
+async def garantir_tabelas_novas(engine: AsyncEngine) -> None:
+    """`create_all` só CRIA tabela que falta — nunca altera uma já existente.
+    Seguro rodar em todo boot; é assim que uma tabela nova (ex.: contas
+    bancárias) aparece sozinha em quem já está rodando em produção."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 def _tabelas_e_colunas(sync_conn) -> tuple[set[str], dict[str, set[str]]]:
