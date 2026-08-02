@@ -17,6 +17,8 @@ interface PDVState {
   desconto: number           // valor absoluto em R$
   descontoPct: number
   observacao: string
+  clienteId: number | null
+  clienteNome: string | null
 
   setSessaoId: (id: number | null) => void
   addItem: (item: Omit<CartItem, 'total_item'>) => void
@@ -25,6 +27,7 @@ interface PDVState {
   clearCart: () => void
   setDesconto: (valor: number, pct?: number) => void
   setObservacao: (obs: string) => void
+  setCliente: (id: number | null, nome: string | null) => void
 
   // Computed
   subtotal: () => number
@@ -37,6 +40,8 @@ export const usePDVStore = create<PDVState>((set, get) => ({
   desconto: 0,
   descontoPct: 0,
   observacao: '',
+  clienteId: null,
+  clienteNome: null,
 
   setSessaoId: (id) => set({ sessaoId: id }),
 
@@ -78,11 +83,13 @@ export const usePDVStore = create<PDVState>((set, get) => ({
   removeItem: (produto_id) =>
     set((state) => ({ cart: state.cart.filter((c) => c.produto_id !== produto_id) })),
 
-  clearCart: () => set({ cart: [], desconto: 0, descontoPct: 0, observacao: '' }),
+  clearCart: () => set({ cart: [], desconto: 0, descontoPct: 0, observacao: '', clienteId: null, clienteNome: null }),
 
   setDesconto: (valor, pct = 0) => set({ desconto: valor, descontoPct: pct }),
 
   setObservacao: (obs) => set({ observacao: obs }),
+
+  setCliente: (id, nome) => set({ clienteId: id, clienteNome: nome }),
 
   subtotal: () => get().cart.reduce((acc, item) => acc + item.total_item, 0),
 
