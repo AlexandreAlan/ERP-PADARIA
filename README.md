@@ -304,6 +304,9 @@ Criadas automaticamente pelo `seed_dev.py`:
 
 ### PDV — Frente de Caixa
 
+- **Terminal full-screen de verdade**: sem menu lateral nem cabeçalho do
+  sistema, ocupa a tela inteira igual PDV de mercado — com uma saída discreta
+  pro painel (ícone no canto superior esquerdo)
 - **Visual sério, tema escuro** (referência: CPlug) — ações rápidas em badges
   coloridos (Cliente/Desconto), produtos com foto (ou inicial do nome quando
   não tem), lista de venda com miniatura, não cards de app de delivery
