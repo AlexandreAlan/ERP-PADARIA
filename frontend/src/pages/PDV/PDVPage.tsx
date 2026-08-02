@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import toast from 'react-hot-toast'
 import { api } from '@/config/api'
@@ -47,14 +48,24 @@ function Relogio() {
   return <span className="font-mono text-sm" style={{ color: COR.muted }}>{agora.toLocaleTimeString('pt-BR')}</span>
 }
 
+const IconSair = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+  </svg>
+)
+
 function BarraDeStatus() {
   const { user } = useAuthStore()
   const empresa = useEmpresaStore(s => s.empresa)
+  const navigate = useNavigate()
   const { data: sessao } = useQuery('sessao-ativa', () => api.get('/caixa/sessao-ativa').then(r => r.data), { retry: false })
 
   return (
     <div className="flex items-center justify-between px-4 py-2 shrink-0" style={{ background: COR.surface, borderBottom: `1px solid ${COR.border}` }}>
       <div className="flex items-center gap-2.5">
+        <button onClick={() => navigate('/dashboard')} title="Voltar ao painel" className="flex items-center gap-1.5 pr-2" style={{ color: COR.mutedDim }}>
+          <IconSair />
+        </button>
         <span className="font-bold text-sm" style={{ color: COR.text }}>{empresa?.nome ?? 'PDV'}</span>
         <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.15)', color: COR.verde }}>
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: COR.verde }} />
@@ -226,7 +237,7 @@ export default function PDVPage() {
 
   return (
     <SessaoGuard>
-      <div className="flex flex-col h-full w-full" style={{ background: COR.bg }}>
+      <div className="fixed inset-0 flex flex-col" style={{ background: COR.bg }}>
         {!isMobile && <BarraDeStatus />}
 
         <div className="flex flex-1 overflow-hidden">
