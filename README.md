@@ -353,6 +353,19 @@ Criadas automaticamente pelo `seed_dev.py`:
 - Vendas por período com filtro de data
 - Movimentações de estoque
 - Exportação em PDF e Excel
+- **Relatório Dinâmico**: escolha as dimensões (dia, categoria, produto, operador,
+  caixa, cliente) e as métricas (quantidade, faturamento, custo, lucro, ticket
+  médio, nº de vendas) e monte a tabela na hora, com exportação em Excel
+
+### Financeiro
+
+- **Conciliação bancária**: importa o extrato OFX do internet banking (dedup
+  automático, reimportar não duplica), sugere o pagamento em PIX/dinheiro que
+  bate por valor e data, e permite conciliar manualmente o que sobrar (cartão
+  costuma juntar várias vendas num depósito só, então esse casamento é sempre manual)
+- **Contratos de cartão**: cadastro das operadoras (Stone, Cielo, Rede etc.) e
+  das taxas por bandeira/tipo/parcelas, com cálculo do valor líquido esperado
+  e da data prevista de recebimento
 
 ### Auditoria
 
