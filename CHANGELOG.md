@@ -26,6 +26,14 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
   recebimento
 - **Relatório Dinâmico**: tabela dinâmica de vendas (dimensão + métrica à
   escolha do usuário) com exportação em Excel
+- **PDV com cara de sistema de verdade**: leitor de código de barras liga direto
+  no carrinho (o hook já existia mas não estava em uso), atalhos de teclado
+  (F2/F4/F9/Del/Esc), barra de status (operador/caixa/horário), venda em
+  andamento em tabela densa em vez de cards de app de delivery
+
+### Fixed
+- Barra de status do PDV ficava com dado antigo do caixa logo após abrir a
+  sessão (cache do React Query não era invalidado)
 
 ### Security
 - XML da NF-e é lido com `defusedxml` (proteção contra XML bomb/XXE), não o
