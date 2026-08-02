@@ -18,6 +18,14 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
   pela importação — só por compra ou ajuste, preservando a auditoria
 - Migração automática e idempotente de colunas novas em produção (o projeto não
   usa Alembic; até então uma coluna nova exigia intervenção manual no banco)
+- **Conciliação bancária**: importação de extrato OFX (com dedupe por FITID),
+  sugestão automática de PIX/dinheiro por valor+data, e conciliação manual do
+  que sobrar
+- **Contratos de cartão**: cadastro de operadora (Stone/Cielo/Rede/etc.) e taxa
+  por bandeira/tipo/parcelas, com cálculo do valor líquido esperado e prazo de
+  recebimento
+- **Relatório Dinâmico**: tabela dinâmica de vendas (dimensão + métrica à
+  escolha do usuário) com exportação em Excel
 
 ### Security
 - XML da NF-e é lido com `defusedxml` (proteção contra XML bomb/XXE), não o
