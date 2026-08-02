@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 
 from app.config import get_settings
 from app.database import engine
-from app.migrations import aplicar_migracoes_aditivas
+from app.migrations import aplicar_migracoes_aditivas, garantir_tabelas_novas
 from app.routers import (
     auth,
     usuarios,
@@ -24,6 +24,7 @@ from app.routers import (
     configuracoes,
     super_admin,
     clientes,
+    financeiro,
 )
 
 settings = get_settings()
@@ -39,6 +40,7 @@ _SERVE_FRONTEND = os.path.isdir(_FRONTEND_DIST)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await garantir_tabelas_novas(engine)
     await aplicar_migracoes_aditivas(engine)
     yield
 
@@ -81,6 +83,7 @@ app.include_router(auditoria.router,    prefix=f"{PREFIX}/auditoria",    tags=["
 app.include_router(configuracoes.router,prefix=f"{PREFIX}/configuracoes",tags=["Configurações"])
 app.include_router(super_admin.router,  prefix=f"{PREFIX}/super-admin", tags=["Super Admin"])
 app.include_router(clientes.router,     prefix=f"{PREFIX}/clientes",    tags=["Clientes"])
+app.include_router(financeiro.router,   prefix=f"{PREFIX}/financeiro",  tags=["Financeiro"])
 
 
 @app.get("/api/health")
