@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, date
+from datetime import timedelta, date
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 
@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.produto import Produto
 from app.models.venda import Venda, ItemVenda, Pagamento
+from app.utils.tempo import limites_do_dia_local
 from app.schemas.dashboard import (
     KPIResumo,
     VendaDiaria,
@@ -57,8 +58,7 @@ async def calcular_kpis(
     db: AsyncSession,
     caixa_id: Optional[int] = None,
 ) -> KPIResumo:
-    dt_inicio = datetime.combine(data_inicio, datetime.min.time())
-    dt_fim = datetime.combine(data_fim, datetime.max.time())
+    dt_inicio, dt_fim = limites_do_dia_local(data_inicio, data_fim)
 
     filtros = [
         Venda.status == "concluida",
@@ -113,8 +113,7 @@ async def vendas_por_dia(
     data_fim: date,
     db: AsyncSession,
 ) -> list[VendaDiaria]:
-    dt_inicio = datetime.combine(data_inicio, datetime.min.time())
-    dt_fim = datetime.combine(data_fim, datetime.max.time())
+    dt_inicio, dt_fim = limites_do_dia_local(data_inicio, data_fim)
 
     result = await db.execute(
         select(
@@ -164,8 +163,7 @@ async def curva_abc(
     data_fim: date,
     db: AsyncSession,
 ) -> list[CurvaABCItem]:
-    dt_inicio = datetime.combine(data_inicio, datetime.min.time())
-    dt_fim = datetime.combine(data_fim, datetime.max.time())
+    dt_inicio, dt_fim = limites_do_dia_local(data_inicio, data_fim)
 
     result = await db.execute(
         select(
@@ -238,8 +236,7 @@ async def calcular_maquinetas(
     data_fim: date,
     db: AsyncSession,
 ) -> list[MaquinetaResumo]:
-    dt_inicio = datetime.combine(data_inicio, datetime.min.time())
-    dt_fim = datetime.combine(data_fim, datetime.max.time())
+    dt_inicio, dt_fim = limites_do_dia_local(data_inicio, data_fim)
 
     result = await db.execute(
         select(
