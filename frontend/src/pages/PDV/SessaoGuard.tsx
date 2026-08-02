@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import toast from 'react-hot-toast'
 import { api } from '@/config/api'
@@ -11,6 +12,7 @@ export default function SessaoGuard({ children }: Props) {
   const [valorAbertura, setValorAbertura] = useState('0.00')
   const { sessaoId, setSessaoId }         = usePDVStore()
   const queryClient                       = useQueryClient()
+  const navigate                          = useNavigate()
 
   const { data: sessaoAtiva, isLoading: checkingSession } = useQuery(
     'sessao-ativa',
@@ -45,7 +47,7 @@ export default function SessaoGuard({ children }: Props) {
 
   if (checkingSession) {
     return (
-      <div className="flex-1 flex items-center justify-center" style={{ background: '#0a0a0b' }}>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#0a0a0b' }}>
         <div className="flex items-center gap-3" style={{ color: '#9ca3af' }}>
           <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" style={{ borderColor: 'rgba(255,255,255,0.15)', borderTopColor: '#22c55e' }} />
           <span className="text-sm">Verificando sessão...</span>
@@ -56,7 +58,7 @@ export default function SessaoGuard({ children }: Props) {
 
   if (!sessaoId && !sessaoAtiva) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4" style={{ background: '#0a0a0b' }}>
+      <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background: '#0a0a0b' }}>
         <div
           className="w-full max-w-sm rounded-2xl p-8 space-y-6"
           style={{ background: '#141416', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -116,6 +118,13 @@ export default function SessaoGuard({ children }: Props) {
               style={{ background: '#22c55e', color: '#0a0a0a' }}
             >
               {abrirCaixaMutation.isLoading ? 'Abrindo...' : 'Abrir Caixa'}
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="w-full text-xs font-semibold"
+              style={{ color: '#6b7280' }}
+            >
+              ← Voltar ao painel
             </button>
           </div>
         </div>
