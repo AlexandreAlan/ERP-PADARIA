@@ -28,8 +28,10 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
   escolha do usuário) com exportação em Excel
 - **PDV com cara de sistema de verdade**: leitor de código de barras liga direto
   no carrinho (o hook já existia mas não estava em uso), atalhos de teclado
-  (F2/F4/F9/Del/Esc), barra de status (operador/caixa/horário), venda em
-  andamento em tabela densa em vez de cards de app de delivery
+  (F2/F4/F9/Del/Esc), barra de status (operador/caixa/horário)
+- **PDV: visual escuro estilo CPlug** — segunda rodada do redesenho, com
+  referência real (badges coloridos de ação rápida, produtos com foto, lista
+  de venda com miniatura) e cliente vinculável à venda
 
 ### Fixed
 - Barra de status do PDV ficava com dado antigo do caixa logo após abrir a
