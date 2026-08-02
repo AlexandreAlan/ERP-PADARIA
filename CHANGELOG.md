@@ -32,6 +32,9 @@ This project adheres to [Semantic Versioning](https://semver.org/) and [Conventi
 - **PDV: visual escuro estilo CPlug** — segunda rodada do redesenho, com
   referência real (badges coloridos de ação rápida, produtos com foto, lista
   de venda com miniatura) e cliente vinculável à venda
+- **PDV: terminal full-screen de verdade** — terceira rodada: tirado de dentro
+  do layout do sistema (sem menu lateral/topbar), ocupando a tela inteira
+  como um PDV de mercado de verdade, com saída discreta pro painel
 
 ### Fixed
 - Barra de status do PDV ficava com dado antigo do caixa logo após abrir a
