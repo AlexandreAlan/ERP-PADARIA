@@ -20,10 +20,11 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route element={<ProtectedRoute />}>
+        {/* PDV é terminal full-screen de verdade — fora do layout com menu/topbar */}
+        <Route path="/pdv" element={<PDVPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/pdv" element={<PDVPage />} />
           <Route path="/estoque" element={<EstoquePage />} />
           <Route path="/caixa" element={<CaixaPage />} />
           <Route path="/compras" element={<ComprasPage />} />
