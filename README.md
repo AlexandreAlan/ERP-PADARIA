@@ -304,12 +304,14 @@ Criadas automaticamente pelo `seed_dev.py`:
 
 ### PDV — Frente de Caixa
 
+- **Visual sério, tema escuro** (referência: CPlug) — ações rápidas em badges
+  coloridos (Cliente/Desconto), produtos com foto (ou inicial do nome quando
+  não tem), lista de venda com miniatura, não cards de app de delivery
 - **Leitor de código de barras**: bipou, entra direto na venda — sem clicar em nada
 - **Atalhos de teclado** (padrão de PDV de mercado): `F2` busca produto, `F4` finaliza
   venda, `F9` desconto, `Del` remove o item selecionado, `Esc` cancela a venda
 - **Barra de status** com operador, caixa, horário de abertura e relógio
-- Venda em andamento em tabela densa (código/produto/qtd/valor/total), não em
-  cards — pensada pra quem opera caixa o dia inteiro, não pra navegar num catálogo
+- **Cliente na venda**: seleciona (ou busca por nome/CPF/telefone) quem está comprando
 - Pagamento único ou dividido: Dinheiro, Crédito, Débito, PIX, Vale
 - Troco calculado automaticamente
 - Impressão do cupom ESC/POS automática após venda
