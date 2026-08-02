@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from 'react-query'
+import { useQuery, useMutation, useQueryClient } from 'react-query'
 import toast from 'react-hot-toast'
 import { api } from '@/config/api'
 import { usePDVStore } from '@/store/pdvStore'
@@ -10,6 +10,7 @@ interface Props { children: React.ReactNode }
 export default function SessaoGuard({ children }: Props) {
   const [valorAbertura, setValorAbertura] = useState('0.00')
   const { sessaoId, setSessaoId }         = usePDVStore()
+  const queryClient                       = useQueryClient()
 
   const { data: sessaoAtiva, isLoading: checkingSession } = useQuery(
     'sessao-ativa',
@@ -33,6 +34,7 @@ export default function SessaoGuard({ children }: Props) {
     {
       onSuccess: (data) => {
         setSessaoId(data.id)
+        queryClient.invalidateQueries('sessao-ativa')
         toast.success(`Caixa aberto com fundo de ${formatBRL(data.valor_abertura)}`)
       },
       onError: (err: any) => {
