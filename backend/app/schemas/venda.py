@@ -38,6 +38,10 @@ class PagamentoCreate(BaseModel):
     forma: str  # dinheiro | cartao_credito | cartao_debito | pix | vale
     valor: Decimal
     nsu: Optional[str] = None
+    # Só fazem sentido pra cartao_credito/cartao_debito (contratos de cartão / conciliação)
+    operadora_id: Optional[int] = None
+    bandeira: Optional[str] = None
+    parcelas: int = 1
 
     @field_validator("forma")
     @classmethod
@@ -54,6 +58,23 @@ class PagamentoCreate(BaseModel):
             raise ValueError("Valor do pagamento deve ser positivo")
         return v
 
+    @field_validator("bandeira")
+    @classmethod
+    def bandeira_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        validas = {"visa", "master", "elo", "amex", "hipercard", "outra"}
+        if v not in validas:
+            raise ValueError(f"Bandeira inválida. Use: {validas}")
+        return v
+
+    @field_validator("parcelas")
+    @classmethod
+    def parcelas_valida(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("Parcelas deve ser pelo menos 1")
+        return v
+
 
 class PagamentoRead(BaseModel):
     id: int
@@ -61,6 +82,9 @@ class PagamentoRead(BaseModel):
     valor: Decimal
     nsu: Optional[str]
     status: str
+    operadora_id: Optional[int] = None
+    bandeira: Optional[str] = None
+    parcelas: int = 1
 
     model_config = {"from_attributes": True}
 
