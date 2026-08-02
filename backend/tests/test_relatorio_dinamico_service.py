@@ -60,13 +60,14 @@ async def test_ticket_medio_calculado_em_python(db):
 
 
 async def test_filtro_por_periodo(db):
-    from datetime import date, timedelta
+    from datetime import timedelta
+    from app.utils.tempo import hoje_local
     u = await criar_usuario(db)
     s = await criar_sessao(db, u.id)
     p = await criar_produto(db, preco_venda="10.00", estoque="100")
     await _vender(db, s.id, u.id, p.id, "1", "10.00")
 
-    ontem = date.today() - timedelta(days=1)
+    ontem = hoje_local() - timedelta(days=1)
     resultado = await gerar_relatorio(
         ["produto"], ["faturamento"], FiltrosRelatorio(data_inicio=ontem, data_fim=ontem), db,
     )
