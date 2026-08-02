@@ -126,6 +126,9 @@ async def criar_venda(
             forma=pag_in.forma,
             valor=pag_in.valor.quantize(TWO, ROUND_HALF_UP),
             nsu=pag_in.nsu,
+            operadora_id=pag_in.operadora_id,
+            bandeira=pag_in.bandeira,
+            parcelas=pag_in.parcelas,
             status="aprovado",
             created_at=now,
         )
