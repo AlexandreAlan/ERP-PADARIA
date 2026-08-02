@@ -36,3 +36,6 @@ python-dateutil>=2.9.0
 python-slugify>=8.0.4
 pillow>=11.1.0
 defusedxml>=0.7.1
+# zoneinfo (stdlib) não vem com a base de fusos no Windows — sem isso,
+# ZoneInfo("America/Sao_Paulo") quebra fora de Linux/macOS.
+tzdata>=2024.1
