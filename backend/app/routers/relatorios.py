@@ -11,6 +11,10 @@ from app.dependencies.auth import require_admin_gerente
 from app.models.configuracao import ConfiguracaoEmpresa
 from app.models.usuario import Usuario
 from app.services import relatorio_service, email_service
+from app.services.relatorio_dinamico_service import (
+    gerar_relatorio, FiltrosRelatorio, RelatorioDinamicoError,
+    DIMENSOES_DISPONIVEIS, METRICAS_DISPONIVEIS,
+)
 
 router = APIRouter()
 
@@ -21,6 +25,22 @@ class EnviarRelatorioEmail(BaseModel):
     data_inicio: date
     data_fim: date
     caixa_id: Optional[int] = None
+
+
+class FiltrosDinamico(BaseModel):
+    data_inicio: Optional[date] = None
+    data_fim: Optional[date] = None
+    categoria_id: Optional[int] = None
+    produto_id: Optional[int] = None
+    usuario_id: Optional[int] = None
+    caixa_id: Optional[int] = None
+    cliente_id: Optional[int] = None
+
+
+class RelatorioDinamicoRequest(BaseModel):
+    dimensoes: list[str]
+    metricas: list[str]
+    filtros: FiltrosDinamico = FiltrosDinamico()
 
 
 @router.get("/vendas/pdf")
@@ -101,3 +121,58 @@ async def enviar_relatorio_email(
         raise HTTPException(status_code=502, detail=f"Erro ao enviar e-mail: {exc}")
 
     return {"ok": True, "mensagem": f"Relatório enviado para {payload.destinatario}."}
+
+
+# ── Relatório dinâmico ────────────────────────────────────────────────────────
+
+@router.get("/dinamico/opcoes")
+async def opcoes_relatorio_dinamico(current_user: Usuario = Depends(require_admin_gerente)):
+    return {"dimensoes": DIMENSOES_DISPONIVEIS, "metricas": METRICAS_DISPONIVEIS}
+
+
+@router.post("/dinamico")
+async def relatorio_dinamico(
+    payload: RelatorioDinamicoRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(require_admin_gerente),
+):
+    try:
+        resultado = await gerar_relatorio(
+            payload.dimensoes, payload.metricas, FiltrosRelatorio(**payload.filtros.model_dump()), db,
+        )
+    except RelatorioDinamicoError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return {"dimensoes": resultado.dimensoes, "metricas": resultado.metricas, "linhas": resultado.linhas}
+
+
+@router.post("/dinamico/excel")
+async def relatorio_dinamico_excel(
+    payload: RelatorioDinamicoRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(require_admin_gerente),
+):
+    try:
+        resultado = await gerar_relatorio(
+            payload.dimensoes, payload.metricas, FiltrosRelatorio(**payload.filtros.model_dump()), db,
+        )
+    except RelatorioDinamicoError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    import openpyxl
+    from io import BytesIO
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Relatório dinâmico"
+    colunas = resultado.dimensoes + resultado.metricas
+    ws.append(colunas)
+    for linha in resultado.linhas:
+        ws.append([linha.get(c) for c in colunas])
+
+    buf = BytesIO()
+    wb.save(buf)
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="relatorio_dinamico.xlsx"'},
+    )
