@@ -14,6 +14,14 @@ from zoneinfo import ZoneInfo
 from app.config import get_settings
 
 
+def hoje_local() -> date:
+    """Que dia é hoje agora mesmo, no fuso do negócio — não no fuso de quem
+    roda o processo (o servidor/CI pode estar em UTC)."""
+    settings = get_settings()
+    agora_utc = datetime.now(ZoneInfo("UTC"))
+    return agora_utc.astimezone(ZoneInfo(settings.report_timezone)).date()
+
+
 def limites_do_dia_local(data_inicio: date, data_fim: date) -> tuple[datetime, datetime]:
     """Meia-noite de `data_inicio` até 23:59:59 de `data_fim`, no fuso do
     negócio, convertidas pro UTC ingênuo (sem tzinfo) — o mesmo formato de
