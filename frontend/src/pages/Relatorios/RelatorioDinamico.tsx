@@ -153,9 +153,9 @@ export default function RelatorioDinamico() {
           <div className="bakery-card overflow-x-auto p-0">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: 'var(--clr-bg)' }}>
+                <tr style={{ background: 'var(--clr-surface, #f3f4f6)', borderBottom: '2px solid var(--clr-border)' }}>
                   {colunas.map(c => (
-                    <th key={c} className="text-left px-4 py-2 text-xs font-semibold" style={{ color: 'var(--clr-text-muted)' }}>
+                    <th key={c} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--clr-text)' }}>
                       {rotulo(c)}
                     </th>
                   ))}
@@ -163,7 +163,7 @@ export default function RelatorioDinamico() {
               </thead>
               <tbody>
                 {linhas.map((linha, i) => (
-                  <tr key={i} style={{ borderTop: '1px solid var(--clr-border)' }}>
+                  <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'var(--clr-surface, rgba(0,0,0,0.02))', borderTop: '1px solid var(--clr-border)' }}>
                     {colunas.map(c => (
                       <td key={c} className="px-4 py-2" style={{ color: 'var(--clr-text)' }}>{String(linha[c])}</td>
                     ))}
