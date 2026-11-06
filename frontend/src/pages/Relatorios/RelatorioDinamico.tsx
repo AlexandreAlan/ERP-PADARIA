@@ -23,10 +23,19 @@ function Chip({ ativo, label, onClick }: { ativo: boolean; label: string; onClic
     <button
       type="button"
       onClick={onClick}
-      className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all"
+      className="px-4 py-2 rounded-full text-xs font-semibold border transition-all whitespace-nowrap"
       style={ativo
-        ? { background: 'var(--clr-primary)', color: 'white', borderColor: 'var(--clr-primary)' }
-        : { background: 'var(--clr-surface, white)', color: 'var(--clr-text)', borderColor: 'var(--clr-border)' }
+        ? {
+            background: 'var(--clr-primary)',
+            color: '#FFFFFF',
+            borderColor: 'var(--clr-primary)',
+            boxShadow: '0 2px 8px rgba(64, 145, 108, 0.3)'
+          }
+        : {
+            background: 'var(--clr-surface, white)',
+            color: 'var(--clr-text)',
+            borderColor: 'var(--clr-border)'
+          }
       }
     >
       {label}
