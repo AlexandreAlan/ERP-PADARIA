@@ -60,10 +60,15 @@ function BarraDeStatus() {
   const navigate = useNavigate()
   const { data: sessao } = useQuery('sessao-ativa', () => api.get('/caixa/sessao-ativa').then(r => r.data), { retry: false })
 
+  const handleSair = () => {
+    const rotaRetorno = user?.perfil === 'operador' ? '/caixa' : '/dashboard'
+    navigate(rotaRetorno)
+  }
+
   return (
     <div className="flex items-center justify-between px-4 py-2 shrink-0" style={{ background: COR.surface, borderBottom: `1px solid ${COR.border}` }}>
       <div className="flex items-center gap-2.5">
-        <button onClick={() => navigate('/dashboard')} title="Voltar ao painel" className="flex items-center gap-1.5 pr-2" style={{ color: COR.mutedDim }}>
+        <button onClick={handleSair} title="Voltar ao painel" className="flex items-center gap-1.5 pr-2" style={{ color: COR.mutedDim }}>
           <IconSair />
         </button>
         <span className="font-bold text-sm" style={{ color: COR.text }}>{empresa?.nome ?? 'PDV'}</span>
