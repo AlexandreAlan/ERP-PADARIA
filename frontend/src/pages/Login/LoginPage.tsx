@@ -22,7 +22,8 @@ export default function LoginPage() {
           data.access_token,
           data.refresh_token
         )
-        navigate('/')
+        const rotaDestino = data.perfil === 'operador' ? '/caixa' : '/dashboard'
+        navigate(rotaDestino)
       },
       onError: (err: any) => {
         toast.error(err.response?.data?.detail || 'E-mail ou senha incorretos')
